@@ -25,9 +25,9 @@ FAdo IO.
 
 from yappy_parser import Yappy, grules
 
-from common import Epsilon, DFAerror, TRError
+from common import Epsilon, AnySet, DiffSet, DFAerror, TRError
 from fa import DFA, NFA, statePP
-from transducers import SFT, GFT, Transducer
+from transducers import SFT, SSFT, GFT, Transducer
 
 
 class ParserFAdo(Yappy):
@@ -41,10 +41,13 @@ class ParserFAdo(Yappy):
                      ("\s+", ""),
                      #("@epsilon", lambda x: ("ids", "@epsilon")),
                      ("@epsilon", lambda x: ("ids", Epsilon)),
+                     (AnySet, lambda x: ("ids", AnySet)),
+                     (DiffSet, lambda x: ("ids", DiffSet)),
                      ("@NFA", lambda x: ("NFA", "NFA")),
                      ("@DFA", lambda x: ("DFA", "DFA")),
                      ("@TDFA", lambda x: ("TDFA", "TDFA")),
                      ("@Transducer", lambda x: ("TRANS", "TRANS")),
+                     ("@STransducer", lambda x: ("STRANS", "STRANS")),
                      ("\*", lambda x: ("SEP", "SEP")),
                      ("\$", lambda x: ("DOLLAR", "DOLLAR")),
                      ("\^", lambda x: ("CARET", "CARET")),
@@ -64,6 +67,8 @@ class ParserFAdo(Yappy):
                           ("td -> TDFA l tt1", self.startTDFASemRule),
                           ("tr -> TRANS l5 ttr", self.startTRANSSemRule),
                           ("tr -> TRANS l3 ttri", self.startTRANSSemRule),
+                          ("tr -> STRANS l5 ttr", self.startSTRANSSemRule),
+                          ("tr -> STRANS l3 ttri", self.startSTRANSSemRule),
                           ("idt -> id", self.defaultSemRule),
                           ("idt -> ids", self.defaultSemRule),
                           ("l -> id l", self.finalSemRule),
@@ -258,6 +263,30 @@ class ParserFAdo(Yappy):
                 new.addTransition(new.stateIndex(x1), x2, x3, new.stateIndex(x4))
             self.theList.append(new)
             self.initLocal()
+
+    def startSTRANSSemRule(self, lst, context=None):
+            """
+
+            :param lst:
+            :param context:"""
+            new = SSFT()
+            new.Sigma = self.alphabet
+            new.Output = self.alphabetOut
+            while self.states:
+                x = self.states.pop()
+                new.addState(x)
+            while self.initials:
+                x = self.initials.pop()
+                new.addInitial(new.stateIndex(x))
+            while self.finals:
+                x = self.finals.pop()
+                new.addFinal(new.stateIndex(x))
+            while self.transitions:
+                (x1, x2, x3, x4) = self.transitions.pop()
+                new.addTransition(new.stateIndex(x1), x2, x3, new.stateIndex(x4))
+            self.theList.append(new)
+            self.initLocal()
+
 
     # noinspection PyUnusedLocal
     def finalSemRule(self, lst, context=None):

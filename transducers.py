@@ -1074,6 +1074,13 @@ class SFT(GFT):
                         return True
         return False
 
+class SSFT(SFT):
+    """Standard Form Tranducer
+
+    :var set Output: output alphabet
+
+    .. inheritance-diagram:: SFT"""
+    pass
 
 class NFT(SFT):
     """Normal Form Transducer.
