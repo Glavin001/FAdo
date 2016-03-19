@@ -39,12 +39,12 @@ sft2ts = '@Transducer 1 * 0\n'\
         '1 2 2 1\n'
 
 
-ssft1ts = '@STransducer 1 * 0\n'\
+ssft1ts = '@SymbolicTransducer 1 * 0\n'\
         '0 any any 0\n'\
         '0 any diff 1\n'\
         '1 any any 1\n'
 
-ssft2ts = '@STransducer 1 * 0\n'\
+ssft2ts = '@SymbolicTransducer 1 * 0\n'\
         '0 @s @s 0\n'\
         "0 @s @d 1\n"\
         '1 @s @s 1\n'
@@ -66,21 +66,21 @@ class ParserTestCase(unittest.TestCase):
         # sft1.makePNG('images/sft1')
         self.assertTrue(isinstance(sft1, SFT))
 
-    def test_SSFT1(self):
+    def test_SymbolicSFT1(self):
         ssft1 = fio.readOneFromString(ssft1ts)
         # ssft1.makePNG('images/ssft1')
-        self.assertTrue(isinstance(ssft1, SSFT))
+        self.assertTrue(isinstance(ssft1, SymbolicSFT))
 
-    def test_SSFT2(self):
+    def test_SymbolicSFT2(self):
         ssft2 = fio.readOneFromString(ssft2ts)
         # ssft2.makePNG('images/ssft2')
-        self.assertTrue(isinstance(ssft2, SSFT))
+        self.assertTrue(isinstance(ssft2, SymbolicSFT))
 
-class SSFTTestCase(unittest.TestCase):
+class SymbolicSFTTestCase(unittest.TestCase):
 
     def test_runOnNFA_1(self):
         ssft2 = fio.readOneFromString(ssft2ts)
-        self.assertTrue(isinstance(ssft2, SSFT))
+        self.assertTrue(isinstance(ssft2, SymbolicSFT))
         sft1 = fio.readOneFromString(sft1ts)
         self.assertTrue(isinstance(sft1, SFT))
         nfa1 = fio.readOneFromString(nfa1ts)
@@ -117,16 +117,16 @@ class SSFTTestCase(unittest.TestCase):
         if _PROFILE:
             print("Using SFT:")
             profile.print_stats()
-            print("Using SSFT:")
+            print("Using SymbolicSFT:")
             sprofile.print_stats()
 
         # Check that this is faster
-        # print("SSFT: {0}, SFT: {1}".format(st, t))
+        # print("SymbolicSFT: {0}, SFT: {1}".format(st, t))
         # self.assertLess(st, t)
 
     def test_runOnNFA_2(self):
         ssft2 = fio.readOneFromString(ssft2ts)
-        self.assertTrue(isinstance(ssft2, SSFT))
+        self.assertTrue(isinstance(ssft2, SymbolicSFT))
         sft1 = fio.readOneFromString(sft2ts)
         self.assertTrue(isinstance(sft1, SFT))
         nfa1 = fio.readOneFromString(nfa2ts)
@@ -163,11 +163,11 @@ class SSFTTestCase(unittest.TestCase):
         if _PROFILE:
             print("Using SFT:")
             profile.print_stats()
-            print("Using SSFT:")
+            print("Using SymbolicSFT:")
             sprofile.print_stats()
 
         # Check that this is faster
-        # print("SSFT: {0}, SFT: {1}".format(st, t))
+        # print("SymbolicSFT: {0}, SFT: {1}".format(st, t))
         # self.assertLess(st, t)
 
 

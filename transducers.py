@@ -1074,7 +1074,7 @@ class SFT(GFT):
                         return True
         return False
 
-class SSFT(SFT):
+class SymbolicSFT(SFT):
     """Symbol Standard Form Tranducer
 
     :var set Output: output alphabet
@@ -1082,10 +1082,10 @@ class SSFT(SFT):
     .. inheritance-diagram:: SFT"""
 
     def __repr__(self):
-        """Return a string adding type 'Transducer'in front of the representation
+        """Return a string adding type 'SymbolicSFT' in front of the representation
 
         :rtype: str"""
-        return 'SSFT(%s)' % self.__str__()
+        return 'SymbolicSFT(%s)' % self.__str__()
 
     # def inIntersection(self, other):
     #     """ Conjunction of transducer and automata: X & Y.

@@ -27,7 +27,7 @@ from yappy_parser import Yappy, grules
 
 from common import Epsilon, AnySet, DiffSet, DFAerror, TRError
 from fa import DFA, NFA, statePP
-from transducers import SFT, SSFT, GFT, Transducer
+from transducers import SFT, SymbolicSFT, GFT, Transducer
 
 
 class ParserFAdo(Yappy):
@@ -47,7 +47,7 @@ class ParserFAdo(Yappy):
                      ("@DFA", lambda x: ("DFA", "DFA")),
                      ("@TDFA", lambda x: ("TDFA", "TDFA")),
                      ("@Transducer", lambda x: ("TRANS", "TRANS")),
-                     ("@STransducer", lambda x: ("STRANS", "STRANS")),
+                     ("@SymbolicTransducer", lambda x: ("STRANS", "STRANS")),
                      ("\*", lambda x: ("SEP", "SEP")),
                      ("\$", lambda x: ("DOLLAR", "DOLLAR")),
                      ("\^", lambda x: ("CARET", "CARET")),
@@ -269,7 +269,7 @@ class ParserFAdo(Yappy):
 
             :param lst:
             :param context:"""
-            new = SSFT()
+            new = SymbolicSFT()
             new.Sigma = self.alphabet
             new.Output = self.alphabetOut
             while self.states:
