@@ -1,0 +1,10 @@
+@Transducer 2 3 4 * 1
+1 @s @epsilon 2
+1 @s @s 5
+2 @s @epsilon 2
+2 @s @s 3
+3 @s @s 3
+3 @s @epsilon 4
+4 @s @epsilon 4
+5 @s @s 5
+5 @s @epsilon 4

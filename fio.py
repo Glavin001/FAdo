@@ -47,7 +47,7 @@ class ParserFAdo(Yappy):
                      ("@DFA", lambda x: ("DFA", "DFA")),
                      ("@TDFA", lambda x: ("TDFA", "TDFA")),
                      ("@Transducer", lambda x: ("TRANS", "TRANS")),
-                     ("@SymbolicTransducer", lambda x: ("STRANS", "STRANS")),
+                     ("@STransducer", lambda x: ("STRANS", "STRANS")),
                      ("\*", lambda x: ("SEP", "SEP")),
                      ("\$", lambda x: ("DOLLAR", "DOLLAR")),
                      ("\^", lambda x: ("CARET", "CARET")),

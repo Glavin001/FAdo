@@ -40,12 +40,12 @@ sft2ts = '@Transducer 1 * 0\n'\
         '1 2 2 1\n'
 
 
-ssft1ts = '@SymbolicTransducer 1 * 0\n'\
+ssft1ts = '@STransducer 1 * 0\n'\
         '0 any any 0\n'\
         '0 any diff 1\n'\
         '1 any any 1\n'
 
-ssft2ts = '@SymbolicTransducer 1 * 0\n'\
+ssft2ts = '@STransducer 1 * 0\n'\
         '0 @s @s 0\n'\
         "0 @s @d 1\n"\
         '1 @s @s 1\n'
