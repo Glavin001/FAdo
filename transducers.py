@@ -1087,34 +1087,34 @@ class SSFT(SFT):
         :rtype: str"""
         return 'SSFT(%s)' % self.__str__()
 
-    def inIntersection(self, other):
-        """ Conjunction of transducer and automata: X & Y.
-
-        :param DFA|NFA other: the automata needs to be operated.
-        :rtype: SFT"""
-        if isinstance(other, fa.DFA):
-            nother = other.toNFA().renameStates()
-        elif isinstance(other, fa.NFA):
-            nother = other.renameStates()
-        else:
-            raise common.FAdoGeneralError("Incompatible objects")
-        et, en = self.epsilonP(), nother.epsilonP()
-        if en:
-            par1 = self.dup()
-            par1.addEpsilonLoops()
-        else:
-            par1 = self
-        if et:
-            par2 = nother.dup()
-            par2.addEpsilonLoops()
-        else:
-            par2 = nother
-        new = par1.productInput(par2)
-        for x in [(par1.States[a], par2.States[b]) for a in par1.Final for b in par2.Final]:
-            # print('x', x)
-            if x in new.States:
-                new.addFinal(new.stateIndex(x))
-        return new
+    # def inIntersection(self, other):
+    #     """ Conjunction of transducer and automata: X & Y.
+    #
+    #     :param DFA|NFA other: the automata needs to be operated.
+    #     :rtype: SFT"""
+    #     if isinstance(other, fa.DFA):
+    #         nother = other.toNFA().renameStates()
+    #     elif isinstance(other, fa.NFA):
+    #         nother = other.renameStates()
+    #     else:
+    #         raise common.FAdoGeneralError("Incompatible objects")
+    #     et, en = self.epsilonP(), nother.epsilonP()
+    #     if en:
+    #         par1 = self.dup()
+    #         par1.addEpsilonLoops()
+    #     else:
+    #         par1 = self
+    #     if et:
+    #         par2 = nother.dup()
+    #         par2.addEpsilonLoops()
+    #     else:
+    #         par2 = nother
+    #     new = par1.productInput(par2)
+    #     for x in [(par1.States[a], par2.States[b]) for a in par1.Final for b in par2.Final]:
+    #         # print('x', x)
+    #         if x in new.States:
+    #             new.addFinal(new.stateIndex(x))
+    #     return new
 
     def productInput(self, other):
         """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
@@ -1128,8 +1128,8 @@ class SSFT(SFT):
         new = SFT()
         new.setSigma(self.Sigma.union(other.Sigma))
         # Exclude Symbols from alphabet
-        new.Sigma.discard(AnySet)
-        new.Sigma.discard(DiffSet)
+        # new.Sigma.discard(AnySet)
+        # new.Sigma.discard(DiffSet)
 
         notDone = set()
         done = set()
@@ -1137,7 +1137,6 @@ class SSFT(SFT):
             # print('s1', s1)
             for s2 in [other.States[x] for x in other.Initial]:
                 sname = (s1, s2)
-                # print('s2', s2)
                 sti = new.addState(sname)
                 new.addInitial(sti)
                 notDone.add(sname)
@@ -1150,7 +1149,6 @@ class SSFT(SFT):
             (i1, i2) = (self.stateIndex(s1), other.stateIndex(s2))
             (k1, k2) = (self.inputS(i1), other.inputS(i2))
 
-
             if AnySet in k1:
                 ks = k2
             else:
@@ -1160,43 +1158,32 @@ class SSFT(SFT):
             # Intersecting Input Labels
             for k in ks:
 
+                # try:
+                #     dk1 = self.delta[i1][k]
+                # except KeyError:
+                #     dk1 = self.delta[i1][AnySet]
+
                 if k in self.delta[i1]:
                     dk1 = self.delta[i1][k]
-                elif AnySet in self.delta[i1]:
+                else: #if AnySet in self.delta[i1]:
                     dk1 = self.delta[i1][AnySet]
-                else:
-                    dk1 = []
-                # print('k', k, 'dk1', dk1)
+                # else:
+                #     dk1 = []
+                # # print('k', k, 'dk1', dk1)
 
                 for (symo, o1) in dk1:
                     # print('symo', symo, 'o1', o1)
                     dk2 = other.delta[i2][k]
 
-                    # if symo is AnySet:
-                    #     dk2 = new.Sigma
-                    # elif symo is DiffSet:
-                    #     dk2 = set(['d'])
-                    # else:
-                    #     dk2 = other.delta[i2][k]
-
-                    # if k in other.delta[i2]:
-                    # elif AnySet in other.delta[i2]:
-                    #     dk2 = other.delta[i2][AnySet]
-                    # else:
-                    #     dk2 = []
-                    # print('k', k, 'dk2', dk2)
-
+                    symos = [symo]
+                    if symo is AnySet:
+                        symos = [k]
+                    elif symo is DiffSet:
+                        symos = [s for s in new.Sigma if s is not AnySet and s is not k]
                     for o2 in dk2:
                         # print('ssft transition', sti, o1, o2, k, symo)
                         # print('states', self.States, self.States[o1], other.States[o2])
-                        if symo is AnySet:
-                            # for symo in new.Sigma.union(k):
-                            symo = k
-                            new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
-                        elif symo is DiffSet:
-                            for symo in new.Sigma.difference(k):
-                                new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
-                        else:
+                        for symo in symos:
                             new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
         return new
 
