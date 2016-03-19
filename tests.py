@@ -5,6 +5,7 @@ import cProfile
 from smu import *
 
 _PROFILE = False
+NUM_RUNS = 2
 
 nfa1ts = '@NFA 1 * 0\n'\
         '0 0 0\n'\
@@ -76,6 +77,29 @@ class ParserTestCase(unittest.TestCase):
         # ssft2.makePNG('images/ssft2')
         self.assertTrue(isinstance(ssft2, SymbolicSFT))
 
+class NFATestCase(unittest.TestCase):
+
+    def test_allTransitions(self):
+        nfa1 = fio.readOneFromString(nfa1ts)
+        self.assertTrue(isinstance(nfa1, NFA))
+        ts = [t for t in nfa1.allTransitions()]
+        # print(ts)
+        self.assertTrue(len(ts) is 2)
+
+        nfa2 = fio.readOneFromString(nfa2ts)
+        self.assertTrue(isinstance(nfa2, NFA))
+        ts = [t for t in nfa2.allTransitions()]
+        # print(ts)
+        self.assertTrue(len(ts) is 4)
+
+    def test_toSFT(self):
+        nfa1 = fio.readOneFromString(nfa1ts)
+        self.assertTrue(isinstance(nfa1, NFA))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFAtoSFT")
+        # print(T)
+        # self.assertTrue(len(ts) is 2)
+
 class SymbolicSFTTestCase(unittest.TestCase):
 
     def test_runOnNFA_1(self):
@@ -90,7 +114,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
         st = timedelta(0)
         profile = cProfile.Profile()
         sprofile = cProfile.Profile()
-        for i in xrange(1,1000):
+        for i in xrange(1,NUM_RUNS):
             a = datetime.now()
             if _PROFILE: profile.enable()
             prod1 = sft1.runOnNFA(nfa1)
@@ -136,7 +160,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
         st = timedelta(0)
         profile = cProfile.Profile()
         sprofile = cProfile.Profile()
-        for i in xrange(1,1000):
+        for i in xrange(1,NUM_RUNS):
             a = datetime.now()
             if _PROFILE: profile.enable()
             prod1 = sft1.runOnNFA(nfa1)
@@ -169,6 +193,28 @@ class SymbolicSFTTestCase(unittest.TestCase):
         # Check that this is faster
         # print("SymbolicSFT: {0}, SFT: {1}".format(st, t))
         # self.assertLess(st, t)
+
+    def test_intersection_nonEmptyW(self):
+        # A is NFA
+        A = fio.readOneFromString(nfa1ts)
+        # B is NFA
+        B = fio.readOneFromString(nfa2ts)
+        # S is SymbolicSFT
+        S = fio.readOneFromString(ssft1ts)
+        # ssft2 = fio.readOneFromString(ssft2ts)
+        # T is SFT
+        T = fio.readOneFromString(sft1ts)
+
+        r = S.inIntersection(A).outIntersection(A)
+        result = r.nonEmptyW()
+        # print(result, result[0], result[1])
+        # r.makePNG('images/in_out_intersection')
+        self.assertTrue(result[0] is None)
+        self.assertTrue(result[1] is None)
+
+        # result = S.matchSFT(A.toSFT(A)).nonEmptyW()
+        # self.assertTrue(result[0] is None)
+        # self.assertTrue(result[1] is None)
 
 
 if __name__ == '__main__':

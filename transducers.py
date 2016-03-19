@@ -1087,34 +1087,14 @@ class SymbolicSFT(SFT):
         :rtype: str"""
         return 'SymbolicSFT(%s)' % self.__str__()
 
-    # def inIntersection(self, other):
-    #     """ Conjunction of transducer and automata: X & Y.
-    #
-    #     :param DFA|NFA other: the automata needs to be operated.
-    #     :rtype: SFT"""
-    #     if isinstance(other, fa.DFA):
-    #         nother = other.toNFA().renameStates()
-    #     elif isinstance(other, fa.NFA):
-    #         nother = other.renameStates()
-    #     else:
-    #         raise common.FAdoGeneralError("Incompatible objects")
-    #     et, en = self.epsilonP(), nother.epsilonP()
-    #     if en:
-    #         par1 = self.dup()
-    #         par1.addEpsilonLoops()
-    #     else:
-    #         par1 = self
-    #     if et:
-    #         par2 = nother.dup()
-    #         par2.addEpsilonLoops()
-    #     else:
-    #         par2 = nother
-    #     new = par1.productInput(par2)
-    #     for x in [(par1.States[a], par2.States[b]) for a in par1.Final for b in par2.Final]:
-    #         # print('x', x)
-    #         if x in new.States:
-    #             new.addFinal(new.stateIndex(x))
-    #     return new
+    def matchSFT(self, other):
+        """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
+        filter on the input.
+
+        :param NFA other: the automaton used as filter
+        :rtype: SFT"""
+        return self
+
 
     def productInput(self, other):
         """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
