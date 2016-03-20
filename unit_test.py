@@ -17,68 +17,54 @@ def sat_with_symbolic_SFT(a, s):
     ## when ready, remove the above line, and use the following statement
     return s.match(a.toSFT(a)).emptyP()    # s = symbolic SFT,  a = NFA
 
+def check_satisfaction(transducer_file, nfa_file, expected_result):
+        t = fio.readOneFromFile("datafiles/"+transducer_file)
+        a = fio.readOneFromFile("datafiles/"+nfa_file)
+        # if isinstance(t, SymbolicSFT):
+        #     r = t.match(a.toSFT(a))
+        # else:
+        r = t.inIntersection(a).outIntersection(a)
+        p = t.productInput(a)
+        image_file = "images/"+transducer_file+"+"+nfa_file
+        # print(image_file)
+        d = r.toDFA().renameStates()
+        r.makePNG(image_file)
+        d.makePNG(image_file+"+DFA")
+        p.toDFA().makePNG(image_file+"+productInput")
+        # print(d)
+        return (r.emptyP() is expected_result)
+
 class MyTestCase(unittest.TestCase):
 
     def test_Satisfaction(self):        # This tests ordinary SFTs
         """ Satisfaction Test """       # The one below tests symbolic SFTs
-        #
-        t = fio.readOneFromFile("datafiles/TR-sub1_ia.ab.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        r = t.inIntersection(a).outIntersection(a).toDFA()
-        r.makePNG("images/TR-sid1-EvenBMult03A")
-        # print(r)
-        self.assertTrue(t.inIntersection(a).outIntersection(a).emptyP())
-        #
-        t = fio.readOneFromFile("datafiles/TR-sub1_ia.abc.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
-        self.assertTrue(t.inIntersection(a).outIntersection(a).emptyP())
-        #
-        t = fio.readOneFromFile("datafiles/TR-sid1_ia.ab.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        self.assertTrue(t.inIntersection(a).outIntersection(a).emptyP())
-        #
-        t = fio.readOneFromFile("datafiles/TR-sid1_ia.abc.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
-        r = t.inIntersection(a).outIntersection(a).toDFA()
-        r.makePNG("images/TR-sid1-EvenBMult03A.abc")
-        self.assertFalse(t.inIntersection(a).outIntersection(a).emptyP())
-        #
-        t = fio.readOneFromFile("datafiles/TR-infix.ab.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        self.assertFalse(t.inIntersection(a).outIntersection(a).emptyP())
+
+        tests = [
+            ["TR-sub1_ia.ab.fa", "NFA-EvenBMult03A.fa", True],
+            ["TR-sub1_ia.abc.fa", "NFA-EvenBMult03A.abc.fa", True],
+            ["TR-sid1_ia.ab.fa", "NFA-EvenBMult03A.fa", True],
+            ["TR-sid1_ia.abc.fa", "NFA-EvenBMult03A.abc.fa", False],
+            ["TR-infix.ab.fa", "NFA-EvenBMult03A.fa", False],
+        ]
+        for (transducer_file, nfa_file, expected_result) in tests:
+            self.assertTrue(check_satisfaction(transducer_file,nfa_file,expected_result), transducer_file+" and "+nfa_file+" was not "+str(expected_result))
 
     def test_SYMBOLIC_Satisfaction(self):
         """ Symbolic Satisfaction Test """
         #
         #----> when ready, remove the lines  "t = True"  and  "t = False",
         #      and uncomment all lines below that start with  #t = fio....
-        #
-        # t = True
-        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        r = t.match(a.toSFT(a)).toDFA()
-        r.makePNG("images/TRS-sid1-EvenBMult03A")
-        # print(r)
-        self.assertTrue(sat_with_symbolic_SFT(a, t))
-        #
-        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
-        self.assertTrue(sat_with_symbolic_SFT(a, t))
-        #
-        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        self.assertTrue(sat_with_symbolic_SFT(a, t))
-        #
-        # t = False
-        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
-        r = t.match(a.toSFT(a)).toDFA()
-        r.makePNG("images/TRS-sid1-EvenBMult03A.abc")
-        self.assertFalse(sat_with_symbolic_SFT(a, t))
-        #
-        t = fio.readOneFromFile("datafiles/TRS-infix.fa")
-        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
-        self.assertFalse(sat_with_symbolic_SFT(a, t))
+
+        tests = [
+            ["TRS-sub1_ia.fa", "NFA-EvenBMult03A.fa", True],
+            ["TRS-sub1_ia.fa", "NFA-EvenBMult03A.abc.fa", True],
+            ["TRS-sid1_ia.fa", "NFA-EvenBMult03A.fa", True],
+            ["TRS-sid1_ia.fa", "NFA-EvenBMult03A.abc.fa", False],
+            ["TRS-infix.fa", "NFA-EvenBMult03A.fa", False],
+        ]
+        for (transducer_file, nfa_file, expected_result) in tests:
+            self.assertTrue(check_satisfaction(transducer_file,nfa_file,expected_result), transducer_file+" and "+nfa_file+" was not "+str(expected_result))
+
 
 if __name__ == '__main__':
     unittest.main()
