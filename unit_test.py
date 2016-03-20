@@ -13,7 +13,7 @@ from smu import *
 #-------------->    GLAVIN:  please read all comments below carefully
 
 def sat_with_symbolic_SFT(a, s):
-    return s
+    # return s
     ## when ready, remove the above line, and use the following statement
     return s.match(a.toSFT(a)).emptyP()    # s = symbolic SFT,  a = NFA
 
@@ -24,6 +24,9 @@ class MyTestCase(unittest.TestCase):
         #
         t = fio.readOneFromFile("datafiles/TR-sub1_ia.ab.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
+        r = t.inIntersection(a).outIntersection(a).toDFA()
+        r.makePNG("images/TR-sid1-EvenBMult03A")
+        # print(r)
         self.assertTrue(t.inIntersection(a).outIntersection(a).emptyP())
         #
         t = fio.readOneFromFile("datafiles/TR-sub1_ia.abc.fa")
@@ -36,6 +39,8 @@ class MyTestCase(unittest.TestCase):
         #
         t = fio.readOneFromFile("datafiles/TR-sid1_ia.abc.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
+        r = t.inIntersection(a).outIntersection(a).toDFA()
+        r.makePNG("images/TR-sid1-EvenBMult03A.abc")
         self.assertFalse(t.inIntersection(a).outIntersection(a).emptyP())
         #
         t = fio.readOneFromFile("datafiles/TR-infix.ab.fa")
@@ -48,25 +53,30 @@ class MyTestCase(unittest.TestCase):
         #----> when ready, remove the lines  "t = True"  and  "t = False",
         #      and uncomment all lines below that start with  #t = fio....
         #
-        t = True
-        #t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        # t = True
+        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
+        r = t.match(a.toSFT(a)).toDFA()
+        r.makePNG("images/TRS-sid1-EvenBMult03A")
+        # print(r)
         self.assertTrue(sat_with_symbolic_SFT(a, t))
         #
-        #t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
         self.assertTrue(sat_with_symbolic_SFT(a, t))
         #
-        #t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
         self.assertTrue(sat_with_symbolic_SFT(a, t))
         #
-        t = False
-        #t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        # t = False
+        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
+        r = t.match(a.toSFT(a)).toDFA()
+        r.makePNG("images/TRS-sid1-EvenBMult03A.abc")
         self.assertFalse(sat_with_symbolic_SFT(a, t))
         #
-        #t = fio.readOneFromFile("datafiles/TRS-infix.fa")
+        t = fio.readOneFromFile("datafiles/TRS-infix.fa")
         a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
         self.assertFalse(sat_with_symbolic_SFT(a, t))
 

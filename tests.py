@@ -77,6 +77,15 @@ class ParserTestCase(unittest.TestCase):
         # ssft2.makePNG('images/ssft2')
         self.assertTrue(isinstance(ssft2, SymbolicSFT))
 
+    def test_TRS_sub1_ia(self):
+        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        self.assertTrue(isinstance(t, SymbolicSFT))
+
+    def test_TRS_sid1_ia(self):
+        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        self.assertTrue(isinstance(t, SymbolicSFT))
+
+
 class NFATestCase(unittest.TestCase):
 
     def test_allTransitions(self):
@@ -212,9 +221,83 @@ class SymbolicSFTTestCase(unittest.TestCase):
         self.assertTrue(result[0] is None)
         self.assertTrue(result[1] is None)
 
-        # result = S.matchSFT(A.toSFT(A)).nonEmptyW()
-        # self.assertTrue(result[0] is None)
-        # self.assertTrue(result[1] is None)
+        result = S.match(A.toSFT(A)).nonEmptyW()
+        self.assertTrue(result[0] is None)
+        self.assertTrue(result[1] is None)
+
+    def test_thing1(self):
+        t = fio.readOneFromFile("datafiles/TR-sub1_ia.ab.fa")
+        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
+        r = t.inIntersection(a).outIntersection(a)
+        r.toDFA().makePNG("images/TR-sid1-EvenBMult03A")
+        # r.makePNG("images/TR-sid1-EvenBMult03A")
+        # print('Transducer')
+        # print("States", r.States)
+        # print("Sigma", r.Sigma)
+        # print("Output", r.Output)
+        # print("Initial", r.Initial)
+        # print("Final", r.Final)
+        # print("Delta", r.delta)
+        self.assertTrue(r.emptyP())
+        r1 = r
+
+        t = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.fa")
+        asft = a.toSFT(a)
+        asft.toDFA().makePNG("images/asft")
+        r = t.match(asft)
+        r.toDFA().makePNG("images/TRS-sid1-EvenBMult03A")
+        # r = t.inIntersection(a).outIntersection(a)
+        # r.makePNG("images/TRS-sid1-EvenBMult03A")
+        # print("SymbolicTransducer")
+        # print("States", r.States)
+        # print("Sigma", r.Sigma)
+        # print("Output", r.Output)
+        # print("Initial", r.Initial)
+        # print("Final", r.Final)
+        # print("Delta", r.delta)
+        self.assertTrue(r.emptyP())
+
+        # Check that they are the same
+        self.assertTrue(r1.toDFA().equal(r.toDFA()))
+        self.assertTrue(r.toDFA().equal(r1.toDFA()))
+
+    def test_thing2(self):
+        t = fio.readOneFromFile("datafiles/TR-sid1_ia.abc.fa")
+        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
+        r = t.inIntersection(a).outIntersection(a)
+        r.toDFA().makePNG("images/TR-sid1-EvenBMult03A.abc")
+        # r.makePNG("images/TR-sid1-EvenBMult03A")
+        # print('Transducer')
+        # print("States", r.States)
+        # print("Sigma", r.Sigma)
+        # print("Output", r.Output)
+        # print("Initial", r.Initial)
+        # print("Final", r.Final)
+        # print("Delta", r.delta)
+        self.assertFalse(r.emptyP())
+        r1 = r
+
+        t = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        a = fio.readOneFromFile("datafiles/NFA-EvenBMult03A.abc.fa")
+        asft = a.toSFT(a)
+        asft.makePNG("images/asft")
+        r = t.match(asft)
+        r.toDFA().makePNG("images/TRS-sid1-EvenBMult03A.abc")
+        # r = t.inIntersection(a).outIntersection(a)
+        # r.makePNG("images/TRS-sid1-EvenBMult03A")
+        # print("SymbolicTransducer")
+        # print("States", r.States)
+        # print("Sigma", r.Sigma)
+        # print("Output", r.Output)
+        # print("Initial", r.Initial)
+        # print("Final", r.Final)
+        # print("Delta", r.delta)
+        self.assertFalse(r.emptyP())
+
+        # Check that they are the same
+        self.assertTrue(r1.toDFA().equal(r.toDFA()))
+        self.assertTrue(r.toDFA().equal(r1.toDFA()))
 
 
 if __name__ == '__main__':

@@ -156,6 +156,20 @@ class GFT(Transducer):
         else:
             self.delta[stsrc][wi].add((wo, sti2))
 
+    def allTransitions(self):
+        """
+        TODO:
+
+        :param int stsrc: state index of departure
+        :param int sti2: state index of arrival
+        :param str wi: word consumed
+        :param str wo: word outputed"""
+        for stsrc in self.delta:
+            for wi in self.delta[stsrc]:
+                for (wo, sti2) in self.delta[stsrc][wi]:
+                    # yield (stsrc, wi, wo, sti2)
+                    yield (self.States[stsrc], wi, wo, self.States[sti2])
+
     def toSFT(self):
         """Conversion to an equivalent SFT
 
@@ -1087,14 +1101,99 @@ class SymbolicSFT(SFT):
         :rtype: str"""
         return 'SymbolicSFT(%s)' % self.__str__()
 
-    def matchSFT(self, other):
-        """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
-        filter on the input.
+    def match(self, other):
+        """Returns a transducer (skeleton) resulting from TODO
 
-        :param NFA other: the automaton used as filter
+           Define another product construction  method
+           S.matchSFT(T), where S is SymbolicSFT and
+           T is SFT,  returning an  SFT  W  as follows:
+           Input alphabet = union of input alph. of S, T
+           Output alphabet= union of those in S, T
+           Start states: all pairs (sS,sT) where
+              sS=any start state of S, sT=any start state of T
+           final states of W: all pairs (fS,fT), where
+              fS=any final state of S, fT=any final state of T
+          for any transitions (s1,u/v,s2) in S and
+                  (t1,x/y,t2) in T, add the transition
+              ((s1,t1), x/y, (s2,t2)) in W  iff   "u/v matches x/y"
+
+           We say that  "u/v  matches  x/y"  is true, if:
+           u=x and v=y, or
+           u/v = @s/@s and x=y and x,y != Epsilon,  or
+           u/v = @s/@d and x!=y and x,y != Epsilon,  or
+           u/v = @s/@epsilon and x != Epsilon and
+                                           y= Epsilon,  or
+           u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
+
+        :param SFT other: TODO
         :rtype: SFT"""
-        return self
 
+        S = self#.renameStates()
+        T = other#.renameStates()
+
+        # Input alphabet = union of input alph. of S, T
+        # Output alphabet= union of those in S, T
+        W = SFT()
+        W.setSigma(self.Sigma.union(other.Sigma))
+        W.setOutput(self.Output.union(other.Output))
+        W.Sigma.discard(AnySet)
+        W.Sigma.discard(DiffSet)
+        W.Output.discard(AnySet)
+        W.Output.discard(DiffSet)
+
+        notDone = set()
+        done = set()
+        # Start states: all pairs (sS,sT) where
+        #   sS=any start state of S, sT=any start state of T
+        for sS in [self.States[x] for x in S.Initial]:
+            for sT in [other.States[x] for x in T.Initial]:
+                sname = (sS, sT)
+                sti = W.addState(sname)
+                W.addInitial(sti)
+                notDone.add(sname)
+
+        # final states of W: all pairs (fS,fT), where
+        #   fS=any final state of S, fT=any final state of T
+        for fS in [self.States[x] for x in S.Final]:
+            for fT in [other.States[x] for x in T.Final]:
+                sname = (fS, fT)
+                sti = W.addState(sname)
+                W.addFinal(sti)
+                # notDone.add(sname)
+
+        # We say that  "u/v  matches  x/y"  is true, if:
+        def matches(u,v, x,y):
+            # u=x and v=y, or
+            if u is x and v is y:
+                return True
+            # u/v = @s/@s and x=y and x,y != Epsilon,  or
+            if u is AnySet and v is AnySet and x is y and x is not Epsilon and y is not Epsilon:
+                return True
+            # u/v = @s/@d and x!=y and x,y != Epsilon,  or
+            if u is AnySet and v is DiffSet and x is not y and x is not Epsilon and y is not Epsilon:
+                return True
+            # u/v = @s/@epsilon and x != Epsilon and
+            #                                y= Epsilon,  or
+            if u is AnySet and v is Epsilon and x is not Epsilon and y is Epsilon:
+                return True
+            # u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
+            if u is Epsilon and v is AnySet and x is Epsilon and y is not Epsilon:
+                return True
+            return False
+
+        # for any transitions (s1,u/v,s2) in S and
+        #       (t1,x/y,t2) in T, add the transition
+        #   ((s1,t1), x/y, (s2,t2)) in W  iff   "u/v matches x/y"
+        for (s1, u, v, s2) in S.allTransitions():
+            for (t1, x, y, t2) in T.allTransitions():
+                if matches(u,v,x,y) is True:
+                    state = (s1, t1)
+                    sti = W.stateIndex(state, True)
+                    statef = (s2, t2)
+                    stif = W.stateIndex(statef, True)
+                    W.addTransitionQ(sti, stif, x, y, notDone, done)
+
+        return W
 
     def productInput(self, other):
         """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
@@ -1106,10 +1205,11 @@ class SymbolicSFT(SFT):
         # print('self', self)
         # print('other', other)
         new = SFT()
+        # Sigma
         new.setSigma(self.Sigma.union(other.Sigma))
         # Exclude Symbols from alphabet
-        # new.Sigma.discard(AnySet)
-        # new.Sigma.discard(DiffSet)
+        new.Sigma.discard(AnySet)
+        new.Sigma.discard(DiffSet)
 
         notDone = set()
         done = set()

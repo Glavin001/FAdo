@@ -24,7 +24,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.   
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 """
 
@@ -66,7 +66,7 @@ class Lexer(object):
         reasons...
 
         :param rules_list: contains pairs C{(re,funct,op?)} where:
-        
+
         *re*: is an uncompiled python regular expression
 
         *funct*: the name of
@@ -120,7 +120,7 @@ class Lexer(object):
         """Scans space C{st} according only one rule
 
         :param rule: one rule C{(re,fun,op)}
-        
+
         :param st: is a list of strings and already matched structures
         """
         re = rule[0]
@@ -294,7 +294,7 @@ class CFGrammar(object):
         :var nonterminals: nonterminals symbols
         :var str start: start symbol
         :var ntr: dictionary of rules for each nonterminal
-        
+
     """
 
     def __init__(self, grammar):
@@ -305,9 +305,9 @@ class CFGrammar(object):
         with C{LeftHandside} nonterminal, C{RightHandside} list of symbols,
         C{SemFunc} syntax-direct semantics,  if present
         C{Prec (PRECEDENCE,ASSOC)} for ambiguous rules
-        
+
         First production is for start symbol
-        
+
         Special symbols: C{@S}, C{$}, C{#}
         """
         """ MUST BE IN THIS ORDER"""
@@ -338,7 +338,7 @@ class CFGrammar(object):
 
     def __str__(self):
         """Grammar rules
-        
+
            :return: a string representing the grammar rules
         """
         s = ""
@@ -682,7 +682,7 @@ class LRtable(object):
         :param cfgr: a context-free grammar
         :param operators: operators
         :param noconflicts: if 0 LRtable conflicts are not resolved,
-                   unless for spcecial operator rules 
+                   unless for spcecial operator rules
         :type noconflicts: integer
         :param expect: exact number of expected LR shift/reduce conflicts
         :type expect: integer
@@ -705,7 +705,7 @@ class LRtable(object):
         self.ACTION = {}
         self.GOTO = {}
         #shelve not working with osets
-        #self.Log.items = c 
+        #self.Log.items = c
         for i in range(len(c)):
             for item in c[i]:
                 a = self.NextToDot(item)
@@ -786,7 +786,7 @@ class LRtable(object):
 
         :param s: rule for shift
         :param r: rule for reduce
-        
+
         """
         try:
             if self.operators and self.operators.has_key(a) and self.precedence.has_key(r) and self.precedence[r]:
@@ -815,11 +815,11 @@ class LRtable(object):
 
 class SLRtable(LRtable):
     """Class for construction of a C{SLR} table
-    
+
  C{SLR} items represented by a pair of integers C{(number of
  rule,position of dot)}
 
- (aho86:_compil page 221) 
+ (aho86:_compil page 221)
     """
 
     def dotatend(self, item, i):
@@ -833,7 +833,7 @@ class SLRtable(LRtable):
         items constructed from C{I} by the two rules:
            - every item of I is in closure(I)
            - If A -> s.Bt in closure(I) and B -> r, then add B ->.r to closure(I)
-        (aho86:_compil page 223) 
+        (aho86:_compil page 223)
         """
         added = {}
         for l in self.gr.nonterminals:
@@ -867,7 +867,7 @@ class SLRtable(LRtable):
             some position on the right hand side.
             It is represented by the rule number and the position of
             the dot
-        
+
             @return: a set of sets of items
         """
         c = Set([self.closure(Set([(len(self.gr.rules) - 1, 0)]))])
@@ -911,7 +911,7 @@ class SLRtable(LRtable):
 class LR1table(LRtable):
     """
     Class for construction of a LR1 table
-    
+
     Items are represented by a pair of integers (number of rule, position of dot)
     """
 
@@ -919,7 +919,7 @@ class LR1table(LRtable):
         """The closure of a set of C{LR(1)} items C{I} is the set of items construted
         from I by the two rules:
             - every item of C{I} is in C{closure(I)}
-    
+
             - If C{[A -> s.Bt,a]} in C{closure(I)},for  C{B ->r} and
               each terminal C{b} in C{first(ta)}, add C{[B ->.r,b]}
               to C{closure(I)}
@@ -952,7 +952,7 @@ class LR1table(LRtable):
         """ An LR(1) item of a grammar G is a production of G with a dot at
             some position of the right hand side and a terminal:
             (rule_number,dot_position,terminal)
-            (aho86:_compil page 231) 
+            (aho86:_compil page 231)
         """
         c = Set([self.closure(Set([(len(self.gr.rules) - 1, 0, self.gr.endmark)]))])
         symbols = self.gr.terminals + self.gr.nonterminals
@@ -1094,7 +1094,7 @@ class LALRtable1(LRtable):
         """The closure of a set of C{LR(1)} items I is the set of items construted
         from I by the two rules:
            - every item of I is in closure(I)
-    
+
            - If [A -> s.Bt,a] in closure(I),for  B ->r and each terminal b in
              first(ta), add [B ->.r,b] to closure(I)
         """
@@ -1222,7 +1222,7 @@ class LALRtable(LALRtable1):
         """ An C{LALR(1)} kernel item of a grammar C{G} is a
         production of C{G} with a
         dot at some position of the right hand side (except the first) and a list
-        of terminals: is coded as a dictionary with key 
+        of terminals: is coded as a dictionary with key
         C{(rule_number,dot_position)} and value a set of terminals.
         """
         i0 = {}
@@ -1350,7 +1350,7 @@ class LogLR(object):
 class LRparser(object):
     """Class for LR parser
 
-       @ivar cfgr: context free grammar 
+       @ivar cfgr: context free grammar
        @ivar rules: grammar rules
        @ivar terminals: grammar terminals
        @ivar nonterminals: grammar nonterminals
@@ -1363,7 +1363,7 @@ class LRparser(object):
        @ivar output: list of grammar rules used for parsing C{tokens}
        (right derivation in reverse)
        @ivar stack:  LR stack with pairs C{(state,token)}
-       
+
     """
 
     def __init__(self, grammar, table_shelve, no_table=1, tabletype=LALRtable, operators=None, noconflicts=1, expect=0,
@@ -1374,9 +1374,9 @@ class LRparser(object):
         with *LeftHandside* nonterminal, *RightHandside* list of symbols,
         *SemFunc* syntax-direct semantics, if present
         *Prec (PRECEDENCE,ASSOC)* for ambiguous rules
-        
+
         First production is for start symbol
-        
+
         :param str table_shelve: file where parser is saved
         :param tabletype: type of LR table: C{SLR}, C{LR1}, C{LALR}
         :type tabletype: LRtable class
@@ -1518,7 +1518,7 @@ class LRparser(object):
         """LR Parsing Algorithm (aho86:_compil, page 218)
         @param tokens:  pairs  (TOKEN, SPECIAL_VALUE)
         @param context: a computational context for semantic actions
-        
+
         @return: parsed result
         """
 
@@ -1560,6 +1560,8 @@ class LRparser(object):
                     raise LRParserError(s, a)
             except KeyError:
                 if _DEBUG: print "Error in action: %s" % self.ACTION
+                print("Stack", self.stack)
+                print("Tokens", self.ip, self.tokens, self.tokens[self.ip])
                 raise LRParserError(s, a)
             except SemanticError, m:
                 if _DEBUG: print "Semantic Rule %d %s" % (n, self.rules[n][2])
@@ -1578,7 +1580,7 @@ class LRparser(object):
              // priority 'left'|
                          ( reg ) E{lb}E{lb}self.ParSemRuleE{rb}E{rb} ;
         where:
-       
+
          -  rulesym="->"  production symbol
          -  rhssep='' RHS symbols separator
          -  opsym='//' operator definition separator
@@ -1607,7 +1609,7 @@ class LRparser(object):
                     -  ruleend=';' end marker for one LHS rule
                     Example:
                     reg -> reg + reg E{lb}E{lb} self.OrSemRule // (priority,'left') E{rb}E{rb} |
-                    ( reg ) E{lb}E{lb}self.ParSemRuleE{rb}E{rb} ; 
+                    ( reg ) E{lb}E{lb}self.ParSemRuleE{rb}E{rb} ;
      """
         if not sym:
             sym = Dict(rulesym="->",
@@ -1730,14 +1732,14 @@ def grules(rules_list, rulesym="->", rhssep=None):
     """
     Transforms a list of rules in a grammar description. If a rule has
     no semantic rules, C{DefaultSemRule} is assumed.
-    
+
     @param rules_list: is a list of pairs (rule,sem)
          where rule is a string  of the form:
            -  Word rulesym Word1 ... Word2
            -  Word rulesym []
     @param rulesym: LHS and RHS rule separator
     @param rhssep: RHS values separator (None for white chars)
-    @return: a grammar description 
+    @return: a grammar description
     """
     gr = []
     sep = re.compile(rulesym)
@@ -1820,11 +1822,11 @@ class Yappy(LRparser):
             @param str: String to be parsed. If not given, reads from
             C{stdin}.
             @param context: some initial computational context
-            @param lexer: if 1 only lexical analisys is performed  
-            
+            @param lexer: if 1 only lexical analisys is performed
+
             @return: a tuple C{(parsed result,context)} or
             only the C{parsed result}
-            
+
         """
         if str:
             self.tokens = self.lex.scan(str)
@@ -1869,7 +1871,7 @@ def Reduction(fun, sargs, context={}):
       -- a function
       -- or a string with positional arguments C{$n} that is expanded
     and evaluated with C{eval}
-    
+
     """
     if callable(fun):
         return apply(fun, [sargs, context])

@@ -1,4 +1,4 @@
-@Transducer 2 3 4 * 1
+@STransducer 2 3 4 * 1
 1 @s @epsilon 2
 1 @s @s 5
 2 @s @epsilon 2

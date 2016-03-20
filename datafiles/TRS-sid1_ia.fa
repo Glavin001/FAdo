@@ -1,6 +1,6 @@
 @STransducer 1 * 0
 0 @s @s 0
 0 @s @d 1
-0 @espilon @s 1
+0 @epsilon @s 1
 0 @s @epsilon 1
 1 @s @s 1

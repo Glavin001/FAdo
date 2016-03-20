@@ -2558,12 +2558,12 @@ class NFA(OFA):
         :raises FAdoGeneralError: if any operand is not an NFA"""
 
         # Check that parameters are correct instance type
-        if isinstance(other, DFA):
-            par2 = other.toNFA()
-        elif not isinstance(other, type(self)):
-            raise FAdoGeneralError("Incompatible objects")
-        else:
-            par2 = other
+        # if isinstance(other, DFA):
+        #     par2 = other.toNFA()
+        # elif not isinstance(other, type(self)):
+        #     raise FAdoGeneralError("Incompatible objects")
+        # else:
+        #     par2 = other
 
         # new = self.product(par2)
         # for x in [(self.States[a], par2.States[b]) for a in self.Final for b in other.Final]:
@@ -2609,65 +2609,63 @@ class NFA(OFA):
         A = self
         B = other
         T = SFT()
-        T.setSigma(self.Sigma.union(other.Sigma))
+        # Input alphabet    of T =  A.Sigma
+        T.setSigma(A.Sigma)
+        # Output alphabet of T =  B.Sigma
+        T.setOutput(B.Sigma)
 
         notDone = set()
         done = set()
+
         # Initial States
-        for sA in [self.States[x] for x in self.Initial]:
-            for sB in [other.States[x] for x in other.Initial]:
+        # start states of T: all pairs (sA,sB), where
+        #   sA=any start state of A, sB=any start state of B
+        for sA in [A.States[x] for x in A.Initial]:
+            for sB in [B.States[x] for x in B.Initial]:
                 sname = (sA, sB)
-                T.addState(sname)
-                T.addInitial(T.stateIndex(sname))
-                if (sA, sB) not in notDone:
-                    notDone.add((sA, sB))
+                T.addInitial(T.stateIndex(sname, True))
+                if sname not in notDone:
+                    notDone.add(sname)
         # Final States
-        for fA in [self.States[x] for x in self.Final]:
-            for fB in [other.States[x] for x in other.Final]:
+        # final states of T: all pairs (fA,fB), where
+        #   fA=any final state of A, fB=any final state of B
+        for fA in [A.States[x] for x in A.Final]:
+            for fB in [B.States[x] for x in B.Final]:
                 sname = (fA, fB)
-                T.addState(sname)
-                T.addFinal(T.stateIndex(sname))
+                T.addFinal(T.stateIndex(sname, True))
                 # if (fA, fB) not in notDone:
                 #     notDone.append((fA, fB))
 
-        # while notDone:
-        #     state = notDone.pop()
-        #     done.append(state)
-        #     (s1, s2) = state
-        #     i = new.stateIndex(state)
-        #     (i1, i2) = (_sN(self, s1), _sN(other, s2))
-        #     (k1, k2) = (_kS(self, i1), _kS(other, i2))
-        #     for k in k1.intersection(k2):
-        #         for destination in [(self.States[d1], other.States[d2]) for d1 in self.delta[i1][k] for d2 in
-        #                             other.delta[i2][k]]:
-        #             _dealT(i, destination)
-        #     for k in k1 - k2:
-        #         for n in self.delta[i1][k]:
-        #             _dealT(i, (self.States[n], EmptySet))
-        #     for k in k2 - k1:
-        #         for n in other.delta[i2][k]:
-        #             _dealT(i, (EmptySet, other.States[n]))
+
+        # TODO: Remove this
+        def ma(s):
+            return s
 
         #  for any transitions (a1,x,a2) in A and (b1,y,b2) in B
         #       add the transition ((a1,b1), x/y, (a2,b2)) in T
         for (a1,x,a2) in A.allTransitions():
             for (b1,y,b2) in B.allTransitions():
-                sti = T.stateIndex((str(a1),str(b1)), True) # Find or auto-create state
-                T.addTransitionQ(sti, (str(a2),str(b2)), x, y, notDone, done)
+                sti = T.stateIndex((ma(a1),ma(b1)), True) # Find or auto-create state
+                stif = T.stateIndex((ma(a2),ma(b2)), True)
+                T.addTransitionQ(sti, stif, x, y, notDone, done)
 
         #  for any transition (a1,x,a2) in A and any state b in B
         #      add the transition ((a1,b), x/@epsilon,(a2,b)) in T
         for (a1,x,a2) in A.allTransitions():
+            # for b in [B.States[x] for x in B.States]:
             for b in B.States:
-                sti = T.stateIndex((str(a1),str(b)), True) # Find or auto-create state
-                T.addTransitionQ(sti, (str(a2),str(b2)), x, Epsilon, notDone, done)
+                sti = T.stateIndex((ma(a1),ma(b)), True) # Find or auto-create state
+                stif = T.stateIndex((ma(a2),ma(b)), True)
+                T.addTransitionQ(sti, stif, x, Epsilon, notDone, done)
 
         #  for any state a in A and transition (b1,y,b2) in B
         #      add the transition ((a,b1),@epsilon/y, (a,b2)) in T
+        # for a in [A.States[x] for x in A.States]:
         for a in A.States:
             for (b1,y,b2) in B.allTransitions():
-                sti = T.stateIndex((str(a),str(b1)), True) # Find or auto-create state
-                T.addTransitionQ(sti, (str(a),str(b2)), Epsilon, y, notDone, done)
+                sti = T.stateIndex((ma(a),ma(b1)), True) # Find or auto-create state
+                stif = T.stateIndex((ma(a),ma(b2)), True)
+                T.addTransitionQ(sti, stif, Epsilon, y, notDone, done)
 
         return T
 
@@ -2679,7 +2677,8 @@ class NFA(OFA):
         for state in self.delta:
             for symbol in self.delta[state]:
                 for target in self.delta[state][symbol]:
-                    yield (state, symbol, target)
+                    # yield (state, symbol, target)
+                    yield (self.States[state], symbol, self.States[target])
 
     def hasTransitionP(self, state, symbol=None, target=None):
         """Whether there's a transition from given state, optionally through given symbol,
