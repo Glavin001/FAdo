@@ -1190,8 +1190,8 @@ class SymbolicSFT(SFT):
                     state = (s1, t1)
                     sti = W.stateIndex(state, True)
                     statef = (s2, t2)
-                    stif = W.stateIndex(statef, True)
-                    W.addTransitionQ(sti, stif, x, y, notDone, done)
+                    # stif = W.stateIndex(statef, True)
+                    W.addTransitionQ(sti, statef, x, y, notDone, done)
 
         return W
 

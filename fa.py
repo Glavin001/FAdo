@@ -2532,77 +2532,29 @@ class NFA(OFA):
         """Construct a SFT equivalent to this NFA.
 
             Consider the NFA method   "A.__and__(B)"
-               between NFAs A and B,  which returns an NFA
-               accepting  L(A) intersection L(B)  ("__and__"
-               relies on the NFA method "product"). Use it as a
-               guide to define  the  product construction method
-               A.toSFT(B), where  A and B are NFAs,  which
-               would return an   SFT  T  as follows:
-              ---
-              Input alphabet    of T =  A.Sigma
-              Output alphabet of T =  B.Sigma
-              start states of T: all pairs (sA,sB), where
-                  sA=any start state of A, sB=any start state of B
-              final states of T: all pairs (fA,fB), where
-                  fA=any final state of A, fB=any final state of B
-             for any transitions (a1,x,a2) in A and (b1,y,b2) in B
-                  add the transition ((a1,b1), x/y, (a2,b2)) in T
-             for any transition (a1,x,a2) in A and any state b in B
-                 add the transition ((a1,b), x/@epsilon,(a2,b)) in T
-             for any state a in A and transition (b1,y,b2) in B
-                 add the transition ((a,b1),@epsilon/y, (a,b2)) in T
-
+            between NFAs A and B,  which returns an NFA
+            accepting  L(A) intersection L(B)  ("__and__"
+            relies on the NFA method "product"). Use it as a
+            guide to define  the  product construction method
+            A.toSFT(B), where  A and B are NFAs,  which
+            would return an   SFT  T  as follows:
+            ---
+            Input alphabet    of T =  A.Sigma
+            Output alphabet of T =  B.Sigma
+            start states of T: all pairs (sA,sB), where
+              sA=any start state of A, sB=any start state of B
+            final states of T: all pairs (fA,fB), where
+              fA=any final state of A, fB=any final state of B
+            for any transitions (a1,x,a2) in A and (b1,y,b2) in B
+              add the transition ((a1,b1), x/y, (a2,b2)) in T
+            for any transition (a1,x,a2) in A and any state b in B
+             add the transition ((a1,b), x/@epsilon,(a2,b)) in T
+            for any state a in A and transition (b1,y,b2) in B
+             add the transition ((a,b1),@epsilon/y, (a,b2)) in T
 
         :param NFA|DFA other: the right hand operand
         :rtype: SFT
         :raises FAdoGeneralError: if any operand is not an NFA"""
-
-        # Check that parameters are correct instance type
-        # if isinstance(other, DFA):
-        #     par2 = other.toNFA()
-        # elif not isinstance(other, type(self)):
-        #     raise FAdoGeneralError("Incompatible objects")
-        # else:
-        #     par2 = other
-
-        # new = self.product(par2)
-        # for x in [(self.States[a], par2.States[b]) for a in self.Final for b in other.Final]:
-        #     if x in new.States:
-        #         new.addFinal(new.stateIndex(x))
-        # return new._namesToString()
-
-        def _sN(a, s):
-            try:
-                j = a.stateIndex(s)
-            except DFAstateUnknown:
-                return None
-            return j
-
-        def _kS(a, j):
-            """
-
-            :param a:
-            :param j:
-            :return:"""
-            if j is None:
-                return set()
-            try:
-                ks = a.delta[j].keys()
-            except KeyError:
-                return set()
-            return set(ks)
-
-        def _dealT(srcI, dest):
-            """
-
-            :param srcI: source state
-            :param dest: destination state"""
-            if not (dest in done or dest in notDone):
-                iN = new.addState(dest)
-                notDone.append(dest)
-            else:
-                iN = new.stateIndex(dest)
-            new.addTransition(srcI, k, iN)
 
         # Setup
         from transducers import SFT
@@ -2626,6 +2578,7 @@ class NFA(OFA):
                 T.addInitial(T.stateIndex(sname, True))
                 if sname not in notDone:
                     notDone.add(sname)
+
         # Final States
         # final states of T: all pairs (fA,fB), where
         #   fA=any final state of A, fB=any final state of B
@@ -2636,7 +2589,6 @@ class NFA(OFA):
                 # if (fA, fB) not in notDone:
                 #     notDone.append((fA, fB))
 
-
         # TODO: Remove this
         def ma(s):
             return s
@@ -2646,7 +2598,8 @@ class NFA(OFA):
         for (a1,x,a2) in A.allTransitions():
             for (b1,y,b2) in B.allTransitions():
                 sti = T.stateIndex((ma(a1),ma(b1)), True) # Find or auto-create state
-                stif = T.stateIndex((ma(a2),ma(b2)), True)
+                # stif = T.stateIndex((ma(a2),ma(b2)), True)
+                stif = (a2, b2)
                 T.addTransitionQ(sti, stif, x, y, notDone, done)
 
         #  for any transition (a1,x,a2) in A and any state b in B
@@ -2655,7 +2608,8 @@ class NFA(OFA):
             # for b in [B.States[x] for x in B.States]:
             for b in B.States:
                 sti = T.stateIndex((ma(a1),ma(b)), True) # Find or auto-create state
-                stif = T.stateIndex((ma(a2),ma(b)), True)
+                # stif = T.stateIndex((ma(a2),ma(b)), True)
+                stif = (a2, b)
                 T.addTransitionQ(sti, stif, x, Epsilon, notDone, done)
 
         #  for any state a in A and transition (b1,y,b2) in B
@@ -2664,7 +2618,8 @@ class NFA(OFA):
         for a in A.States:
             for (b1,y,b2) in B.allTransitions():
                 sti = T.stateIndex((ma(a),ma(b1)), True) # Find or auto-create state
-                stif = T.stateIndex((ma(a),ma(b2)), True)
+                # stif = T.stateIndex((ma(a),ma(b2)), True)
+                stif = (a, b2)
                 T.addTransitionQ(sti, stif, Epsilon, y, notDone, done)
 
         return T
