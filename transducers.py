@@ -1161,32 +1161,12 @@ class SymbolicSFT(SFT):
                 W.addFinal(sti)
                 # notDone.add(sname)
 
-        # We say that  "u/v  matches  x/y"  is true, if:
-        def matches(u,v, x,y):
-            # u=x and v=y, or
-            if u is x and v is y:
-                return True
-            # u/v = @s/@s and x=y and x,y != Epsilon,  or
-            if u is AnySet and v is AnySet and x is y and x is not Epsilon and y is not Epsilon:
-                return True
-            # u/v = @s/@d and x!=y and x,y != Epsilon,  or
-            if u is AnySet and v is DiffSet and x is not y and x is not Epsilon and y is not Epsilon:
-                return True
-            # u/v = @s/@epsilon and x != Epsilon and
-            #                                y= Epsilon,  or
-            if u is AnySet and v is Epsilon and x is not Epsilon and y is Epsilon:
-                return True
-            # u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
-            if u is Epsilon and v is AnySet and x is Epsilon and y is not Epsilon:
-                return True
-            return False
-
         # for any transitions (s1,u/v,s2) in S and
         #       (t1,x/y,t2) in T, add the transition
         #   ((s1,t1), x/y, (s2,t2)) in W  iff   "u/v matches x/y"
         for (s1, u, v, s2) in S.allTransitions():
             for (t1, x, y, t2) in T.allTransitions():
-                if matches(u,v,x,y) is True:
+                if SymbolicSFT.matchLabels(u,v,x,y) is True:
                     state = (s1, t1)
                     sti = W.stateIndex(state, True)
                     statef = (s2, t2)
@@ -1194,6 +1174,31 @@ class SymbolicSFT(SFT):
                     W.addTransitionQ(sti, statef, x, y, notDone, done)
 
         return W
+
+    @staticmethod
+    def matchLabels(u,v, x,y):
+        """
+        TODO: document
+        """
+        # We say that  "u/v  matches  x/y"  is true, if:
+        # u=x and v=y, or
+        if u == x and v == y:
+            return True
+        # u/v = @s/@s and x=y and x,y != Epsilon,  or
+        if u == AnySet and v == AnySet and x == y and x != Epsilon and y != Epsilon:
+            return True
+        # u/v = @s/@d and x!=y and x,y != Epsilon,  or
+        if u == AnySet and v == DiffSet and x != y and x != Epsilon and y != Epsilon:
+            return True
+        # u/v = @s/@epsilon and x != Epsilon and
+        #                                y= Epsilon,  or
+        if u == AnySet and v == Epsilon and x != Epsilon and y == Epsilon:
+            return True
+        # u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
+        if u == Epsilon and v == AnySet and x == Epsilon and y != Epsilon:
+            return True
+        return False
+
 
     def productInput(self, other):
         """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
@@ -1256,10 +1261,10 @@ class SymbolicSFT(SFT):
                     dk2 = other.delta[i2][k]
 
                     symos = [symo]
-                    if symo is AnySet:
+                    if symo == AnySet:
                         symos = [k]
-                    elif symo is DiffSet:
-                        symos = [s for s in new.Sigma if s is not AnySet and s is not k]
+                    elif symo == DiffSet:
+                        symos = [s for s in new.Sigma if s != AnySet and s != k]
                     for o2 in dk2:
                         # print('ssft transition', sti, o1, o2, k, symo)
                         # print('states', self.States, self.States[o1], other.States[o2])

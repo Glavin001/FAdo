@@ -20,17 +20,17 @@ def sat_with_symbolic_SFT(a, s):
 def check_satisfaction(transducer_file, nfa_file, expected_result):
         t = fio.readOneFromFile("datafiles/"+transducer_file)
         a = fio.readOneFromFile("datafiles/"+nfa_file)
-        # if isinstance(t, SymbolicSFT):
-        #     r = t.match(a.toSFT(a))
-        # else:
-        r = t.inIntersection(a).outIntersection(a)
-        p = t.productInput(a)
-        image_file = "images/"+transducer_file+"+"+nfa_file
+        if isinstance(t, SymbolicSFT):
+            r = t.match(a.toSFT(a))
+        else:
+            r = t.inIntersection(a).outIntersection(a)
+        # p = t.productInput(a)
+        # image_file = "images/"+transducer_file+"+"+nfa_file
         # print(image_file)
-        d = r.toDFA().renameStates()
-        r.makePNG(image_file)
-        d.makePNG(image_file+"+DFA")
-        p.toDFA().makePNG(image_file+"+productInput")
+        # d = r.toDFA().renameStates()
+        # r.makePNG(image_file)
+        # d.makePNG(image_file+"+DFA")
+        # p.toDFA().makePNG(image_file+"+productInput")
         # print(d)
         return (r.emptyP() is expected_result)
 

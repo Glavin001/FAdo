@@ -102,13 +102,32 @@ class NFATestCase(unittest.TestCase):
         # print(ts)
         self.assertTrue(len(ts) is 4)
 
-    def test_toSFT(self):
+        nfa3 = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        self.assertTrue(isinstance(nfa3, NFA))
+        ts = [t for t in nfa3.allTransitions()]
+        # print(ts)
+        self.assertTrue(len(ts) is 2)
+        # print(ts)
+
+    def test_toSFT1(self):
         nfa1 = fio.readOneFromString(nfa1ts)
         self.assertTrue(isinstance(nfa1, NFA))
         T = nfa1.toSFT(nfa1)
         T.makePNG("images/NFAtoSFT")
         # print(T)
         # self.assertTrue(len(ts) is 2)
+
+    def test_toSFT2(self):
+        nfa1 = fio.readOneFromFile("datafiles/NFA-small1.fa")
+        self.assertTrue(isinstance(nfa1, NFA))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFA-small1+toSFT")
+
+    def test_toSFT3(self):
+        nfa1 = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        self.assertTrue(isinstance(nfa1, NFA))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFA-small2+toSFT")
 
 class SymbolicSFTTestCase(unittest.TestCase):
 
@@ -305,6 +324,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
     #     self.assertTrue(r1.toDFA().equal(r.toDFA()))
     #     self.assertTrue(r.toDFA().equal(r1.toDFA()))
 
+    @unittest.skip("Skip for now")
     def test_satisfaction(self):
         def check_satisfaction(transducer_file, stransducer_file, nfa_file, expected_result):
             # Get input files
@@ -325,7 +345,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
             try:
                 os.makedirs(folder)
             except:
-                pass 
+                pass
             image_nfa_file = folder+nfa_file
             image_transducer_file = folder+transducer_file
             image_stransducer_file = folder+stransducer_file
@@ -340,16 +360,16 @@ class SymbolicSFTTestCase(unittest.TestCase):
             def prep(d):
                 return d.toDFA()
 
-            t.makePNG(image_transducer_file)
-            st.makePNG(image_stransducer_file)
-
-            prep(r).makePNG(image_file)
-            prep(sr).makePNG(simage_file)
-            prep(sr2).makePNG(simage_file+"_2")
-            # d.makePNG(image_file+"+DFA")
-            prep(p).makePNG(image_file+"+productInput")
-            prep(sp).makePNG(simage_file+"+productInput")
-            prep(asft).makePNG(image_nfa_file+"+SFT")
+            # t.makePNG(image_transducer_file)
+            # st.makePNG(image_stransducer_file)
+            #
+            # prep(r).makePNG(image_file)
+            # prep(sr).makePNG(simage_file)
+            # prep(sr2).makePNG(simage_file+"_2")
+            # # d.makePNG(image_file+"+DFA")
+            # prep(p).makePNG(image_file+"+productInput")
+            # prep(sp).makePNG(simage_file+"+productInput")
+            # prep(asft).makePNG(image_nfa_file+"+SFT")
 
             # Test productInput
             self.assertTrue(p.toDFA().equal(sp.toDFA()), "productInput of "+stransducer_file+" and "+nfa_file+" did not match "+transducer_file)
@@ -364,10 +384,10 @@ class SymbolicSFTTestCase(unittest.TestCase):
             self.assertTrue(r.toDFA().equal(sr2.toDFA()), "Match of "+stransducer_file+" and "+nfa_file+" did not match "+transducer_file)
 
             # Test EmptyP
-            # self.assertTrue(sr.emptyP() is r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using intersection) did not match "+transducer_file)
-            # self.assertTrue(sr2.emptyP() is r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using match and toSFT) did not match "+transducer_file)
-            self.assertTrue((r.emptyP() is expected_result), "EmptyP of "+transducer_file+" and "+nfa_file+" was not "+str(expected_result))
-            # self.assertTrue((sr.emptyP() is expected_result), "EmptyP of "+stransducer_file+" and "+nfa_file+" was not "+str(expected_result))
+            self.assertTrue(sr.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using intersection) did not match "+transducer_file)
+            self.assertTrue(sr2.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using match and toSFT) did not match "+transducer_file)
+            self.assertTrue((r.emptyP() == expected_result), "EmptyP of "+transducer_file+" and "+nfa_file+" was not "+str(expected_result))
+            self.assertTrue((sr.emptyP() == expected_result), "EmptyP of "+stransducer_file+" and "+nfa_file+" was not "+str(expected_result))
 
         tests = [
             ["TR-sub1_ia.ab.fa", "TRS-sub1_ia.fa", "NFA-EvenBMult03A.fa", True],
@@ -379,6 +399,75 @@ class SymbolicSFTTestCase(unittest.TestCase):
 
         for (transducer_file,stransducer_file, nfa_file, expected_result) in tests:
             check_satisfaction(transducer_file,stransducer_file,nfa_file,expected_result)
+
+    @unittest.skip("Skip")
+    def test_match_toSFT(self):
+        nfa1 = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        st = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        self.assertTrue(isinstance(nfa1, NFA))
+        self.assertTrue(isinstance(st, SymbolicSFT))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFA-small2+toSFT")
+        W = st.match(T)
+        st.makePNG("images/TRS-sub1_ia")
+        W.makePNG("images/TRS-sub1_ia+NFA-small2+match_toSFT")
+
+    @unittest.skip("Skip")
+    def test_match_toSFT2(self):
+        nfa1 = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        st = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        self.assertTrue(isinstance(nfa1, NFA))
+        self.assertTrue(isinstance(st, SymbolicSFT))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFA-small2+toSFT")
+        W = st.match(T)
+        st.makePNG("images/TRS-sid1_ia")
+        W.makePNG("images/TRS-sid1_ia+NFA-small2+match_toSFT")
+
+    def test_allTransitions(self):
+        sid1 = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        sid1.makePNG("images/TRS-sid1_ia")
+        self.assertTrue(isinstance(sid1, SymbolicSFT))
+        ts = [t for t in sid1.allTransitions()]
+        # print("sid1", ts)
+        self.assertTrue(len(ts) is 5)
+        # print(ts)
+
+        sub1 = fio.readOneFromFile("datafiles/TRS-sub1_ia.fa")
+        self.assertTrue(isinstance(sub1, SymbolicSFT))
+        ts = [t for t in sub1.allTransitions()]
+        # print(ts)
+        self.assertTrue(len(ts) is 3)
+
+        nfa1 = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        self.assertTrue(isinstance(nfa1, NFA))
+        T = nfa1.toSFT(nfa1)
+        T.makePNG("images/NFA-small2+toSFT")
+        self.assertTrue(isinstance(T, SFT))
+        ts = [t for t in T.allTransitions()]
+        # print("T", ts)
+        self.assertTrue(len(ts) is 12)
+        W = sid1.match(T)
+        W.makePNG("images/TRS-sid1_ia+NFA-small2+match_toSFT")
+        self.assertTrue(isinstance(W, SFT))
+        ts = [t for t in W.allTransitions()]
+        # print("W", ts)
+        self.assertTrue(len(ts) is 14)
+
+    def test_match(self):
+        self.assertTrue(SymbolicSFT.matchLabels(AnySet, Epsilon, "a",Epsilon))
+        # print(AnySet, Epsilon, "a",Epsilon)
+        # print("@s", "@epsilon", "a","@epsilon")
+        self.assertTrue(SymbolicSFT.matchLabels("@s", "@epsilon", "a","@epsilon"))
+
+        # S = fio.readOneFromFile("datafiles/TRS-sid1_ia.fa")
+        # nfa = fio.readOneFromFile("datafiles/NFA-small2.fa")
+        # T = nfa.toSFT(nfa)
+        #
+        # for (s1, u, v, s2) in S.allTransitions():
+        #     for (t1, x, y, t2) in T.allTransitions():
+        #         print((u,v,x,y), SymbolicSFT.matchLabels(u,v,x,y))
+
 
 if __name__ == '__main__':
     unittest.main()
