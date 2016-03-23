@@ -1209,7 +1209,7 @@ class SymbolicSFT(SFT):
 
         # print('self', self)
         # print('other', other)
-        new = SFT()
+        new = SFT() # Not symbolic transducer
         # Sigma
         new.setSigma(self.Sigma.union(other.Sigma))
         # Exclude Symbols from alphabet
@@ -1231,9 +1231,13 @@ class SymbolicSFT(SFT):
             (s1, s2) = state
             # print('state', state)
             sti = new.stateIndex(state)
+            # Get states
             (i1, i2) = (self.stateIndex(s1), other.stateIndex(s2))
+            # Get input symbols from those states
             (k1, k2) = (self.inputS(i1), other.inputS(i2))
 
+            # Check if AnySet symbol is input
+            # allowAny = AnySet in
             if AnySet in k1:
                 ks = k2
             else:
@@ -1241,6 +1245,7 @@ class SymbolicSFT(SFT):
             # print(i1, 'k1', k1, i2, 'k2', k2, 'ks', ks)
 
             # Intersecting Input Labels
+            # for k in k1.intersection(k2):
             for k in ks:
 
                 # try:
@@ -1248,27 +1253,42 @@ class SymbolicSFT(SFT):
                 # except KeyError:
                 #     dk1 = self.delta[i1][AnySet]
 
+                # Find outputs for given input k
                 if k in self.delta[i1]:
                     dk1 = self.delta[i1][k]
-                else: #if AnySet in self.delta[i1]:
+                elif AnySet in self.delta[i1] and k != Epsilon:
                     dk1 = self.delta[i1][AnySet]
-                # else:
-                #     dk1 = []
+                else:
+                    dk1 = []
                 # # print('k', k, 'dk1', dk1)
 
+                # For each possible pair of outputs
+                # symo = output symbol, o1 is destination state
+                #     for (symo, o1) in self.delta[i1][k]:
                 for (symo, o1) in dk1:
                     # print('symo', symo, 'o1', o1)
+                    # Get list of destination states
                     dk2 = other.delta[i2][k]
 
+                    # Create list of transitions
                     symos = [symo]
                     if symo == AnySet:
-                        symos = [k]
+                        # Is symbolic AnySet
+                        # Check if input symbol is Epsilon
+                        if k == Epsilon:
+                            symos = [s for s in new.Sigma if s != Epsilon]
+                        else:
+                            symos = [k]
                     elif symo == DiffSet:
                         symos = [s for s in new.Sigma if s != AnySet and s != k]
+
+                    # Create the transitions
+                    #         for o2 in other.delta[i2][k]:
                     for o2 in dk2:
                         # print('ssft transition', sti, o1, o2, k, symo)
                         # print('states', self.States, self.States[o1], other.States[o2])
                         for symo in symos:
+                            #             new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
                             new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
         return new
 

@@ -324,7 +324,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
     #     self.assertTrue(r1.toDFA().equal(r.toDFA()))
     #     self.assertTrue(r.toDFA().equal(r1.toDFA()))
 
-    @unittest.skip("Skip for now")
+    # @unittest.skip("Skip for now")
     def test_satisfaction(self):
         def check_satisfaction(transducer_file, stransducer_file, nfa_file, expected_result):
             # Get input files
@@ -333,8 +333,12 @@ class SymbolicSFTTestCase(unittest.TestCase):
             a = fio.readOneFromFile("datafiles/"+nfa_file)
 
             # Process
-            r = t.inIntersection(a).outIntersection(a)
-            sr = st.inIntersection(a).outIntersection(a)
+            ri = t.inIntersection(a)
+            r = ri.outIntersection(a)
+
+            sri = st.inIntersection(a)
+            sr = sri.outIntersection(a)
+
             asft = a.toSFT(a)
             sr2 = st.match(asft)
             p = t.productInput(a)
@@ -353,23 +357,29 @@ class SymbolicSFTTestCase(unittest.TestCase):
             image_file = folder+transducer_file+"+"+nfa_file
             simage_file = folder+stransducer_file+"+"+nfa_file
 
-            # d = r.toDFA().renameStates()
+            d = r.toDFA().renameStates()
             # sd = sr.toDFA().renameStates()
             # sd2 = sr2.toDFA().renameStates()
-            #
-            def prep(d):
-                return d.toDFA()
+            d.makePNG(image_file+"+DFA")
 
-            # t.makePNG(image_transducer_file)
-            # st.makePNG(image_stransducer_file)
-            #
+            def prep(d):
+                return d #d.toDFA()
+
+            t.makePNG(image_transducer_file)
+            st.makePNG(image_stransducer_file)
+
+            prep(ri).makePNG(image_file+"+inIntersection")
+            prep(sri).makePNG(simage_file+"+inIntersection")
+
             # prep(r).makePNG(image_file)
             # prep(sr).makePNG(simage_file)
             # prep(sr2).makePNG(simage_file+"_2")
-            # # d.makePNG(image_file+"+DFA")
+            #
             # prep(p).makePNG(image_file+"+productInput")
             # prep(sp).makePNG(simage_file+"+productInput")
+            prep(a).makePNG(image_nfa_file)
             # prep(asft).makePNG(image_nfa_file+"+SFT")
+
 
             # Test productInput
             self.assertTrue(p.toDFA().equal(sp.toDFA()), "productInput of "+stransducer_file+" and "+nfa_file+" did not match "+transducer_file)
@@ -384,10 +394,11 @@ class SymbolicSFTTestCase(unittest.TestCase):
             self.assertTrue(r.toDFA().equal(sr2.toDFA()), "Match of "+stransducer_file+" and "+nfa_file+" did not match "+transducer_file)
 
             # Test EmptyP
-            self.assertTrue(sr.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using intersection) did not match "+transducer_file)
-            self.assertTrue(sr2.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using match and toSFT) did not match "+transducer_file)
             self.assertTrue((r.emptyP() == expected_result), "EmptyP of "+transducer_file+" and "+nfa_file+" was not "+str(expected_result))
-            self.assertTrue((sr.emptyP() == expected_result), "EmptyP of "+stransducer_file+" and "+nfa_file+" was not "+str(expected_result))
+            self.assertTrue((sr2.emptyP() == expected_result), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using match and toSFT) was not "+str(expected_result))
+            self.assertTrue((sr.emptyP() == expected_result), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using intersection) was not "+str(expected_result))
+            self.assertTrue(sr2.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using match and toSFT) did not match "+transducer_file)
+            self.assertTrue(sr.emptyP() == r.emptyP(), "EmptyP of "+stransducer_file+" and "+nfa_file+" (using intersection) did not match "+transducer_file)
 
         tests = [
             ["TR-sub1_ia.ab.fa", "TRS-sub1_ia.fa", "NFA-EvenBMult03A.fa", True],
@@ -395,6 +406,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
             ["TR-sid1_ia.ab.fa", "TRS-sid1_ia.fa", "NFA-EvenBMult03A.fa", True],
             ["TR-sid1_ia.abc.fa", "TRS-sid1_ia.fa", "NFA-EvenBMult03A.abc.fa", False],
             ["TR-infix.ab.fa", "TRS-infix.fa", "NFA-EvenBMult03A.fa", False],
+            ["TR-sid1_ia.ab.fa", "TRS-sid1_ia.fa", "NFA-small3.fa", False],
         ]
 
         for (transducer_file,stransducer_file, nfa_file, expected_result) in tests:

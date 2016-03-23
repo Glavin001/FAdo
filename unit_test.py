@@ -25,14 +25,14 @@ def check_satisfaction(transducer_file, nfa_file, expected_result):
         else:
             r = t.inIntersection(a).outIntersection(a)
         # p = t.productInput(a)
-        # image_file = "images/"+transducer_file+"+"+nfa_file
+        image_file = "images/"+transducer_file+"+"+nfa_file
         # print(image_file)
         # d = r.toDFA().renameStates()
         # r.makePNG(image_file)
         # d.makePNG(image_file+"+DFA")
         # p.toDFA().makePNG(image_file+"+productInput")
         # print(d)
-        return (r.emptyP() is expected_result)
+        return (r.emptyP() == expected_result)
 
 class MyTestCase(unittest.TestCase):
 
