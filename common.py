@@ -310,6 +310,8 @@ class NotSP(DFAerror):
 EmptySet = "@empty_set"
 Epsilon = "@epsilon"
 DeadName = "@DeaD"
+AnySet = "@s"
+DiffSet = "@d"
 
 DEBUG = False
 

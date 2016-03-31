@@ -156,6 +156,20 @@ class GFT(Transducer):
         else:
             self.delta[stsrc][wi].add((wo, sti2))
 
+    def allTransitions(self):
+        """
+        TODO:
+
+        :param int stsrc: state index of departure
+        :param int sti2: state index of arrival
+        :param str wi: word consumed
+        :param str wo: word outputed"""
+        for stsrc in self.delta:
+            for wi in self.delta[stsrc]:
+                for (wo, sti2) in self.delta[stsrc][wi]:
+                    # yield (stsrc, wi, wo, sti2)
+                    yield (self.States[stsrc], wi, wo, self.States[sti2])
+
     def toSFT(self):
         """Conversion to an equivalent SFT
 
@@ -1073,6 +1087,211 @@ class SFT(GFT):
                     if out == Epsilon:
                         return True
         return False
+
+class SymbolicSFT(SFT):
+    """Symbol Standard Form Tranducer
+
+    :var set Output: output alphabet
+
+    .. inheritance-diagram:: SFT"""
+
+    def __repr__(self):
+        """Return a string adding type 'SymbolicSFT' in front of the representation
+
+        :rtype: str"""
+        return 'SymbolicSFT(%s)' % self.__str__()
+
+    def match(self, other):
+        """Returns a transducer (skeleton) resulting from TODO
+
+           Define another product construction  method
+           S.matchSFT(T), where S is SymbolicSFT and
+           T is SFT,  returning an  SFT  W  as follows:
+           Input alphabet = union of input alph. of S, T
+           Output alphabet= union of those in S, T
+           Start states: all pairs (sS,sT) where
+              sS=any start state of S, sT=any start state of T
+           final states of W: all pairs (fS,fT), where
+              fS=any final state of S, fT=any final state of T
+          for any transitions (s1,u/v,s2) in S and
+                  (t1,x/y,t2) in T, add the transition
+              ((s1,t1), x/y, (s2,t2)) in W  iff   "u/v matches x/y"
+
+           We say that  "u/v  matches  x/y"  is true, if:
+           u=x and v=y, or
+           u/v = @s/@s and x=y and x,y != Epsilon,  or
+           u/v = @s/@d and x!=y and x,y != Epsilon,  or
+           u/v = @s/@epsilon and x != Epsilon and
+                                           y= Epsilon,  or
+           u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
+
+        :param SFT other: TODO
+        :rtype: SFT"""
+
+        S = self#.renameStates()
+        T = other#.renameStates()
+
+        # Input alphabet = union of input alph. of S, T
+        # Output alphabet= union of those in S, T
+        W = SFT()
+        W.setSigma(self.Sigma.union(other.Sigma))
+        W.setOutput(self.Output.union(other.Output))
+        W.Sigma.discard(AnySet)
+        W.Sigma.discard(DiffSet)
+        W.Output.discard(AnySet)
+        W.Output.discard(DiffSet)
+
+        notDone = set()
+        done = set()
+        # Start states: all pairs (sS,sT) where
+        #   sS=any start state of S, sT=any start state of T
+        for sS in [self.States[x] for x in S.Initial]:
+            for sT in [other.States[x] for x in T.Initial]:
+                sname = (sS, sT)
+                sti = W.addState(sname)
+                W.addInitial(sti)
+                notDone.add(sname)
+
+        # final states of W: all pairs (fS,fT), where
+        #   fS=any final state of S, fT=any final state of T
+        for fS in [self.States[x] for x in S.Final]:
+            for fT in [other.States[x] for x in T.Final]:
+                sname = (fS, fT)
+                sti = W.addState(sname)
+                W.addFinal(sti)
+                # notDone.add(sname)
+
+        # for any transitions (s1,u/v,s2) in S and
+        #       (t1,x/y,t2) in T, add the transition
+        #   ((s1,t1), x/y, (s2,t2)) in W  iff   "u/v matches x/y"
+        for (s1, u, v, s2) in S.allTransitions():
+            for (t1, x, y, t2) in T.allTransitions():
+                if SymbolicSFT.matchLabels(u,v,x,y) is True:
+                    state = (s1, t1)
+                    sti = W.stateIndex(state, True)
+                    statef = (s2, t2)
+                    # stif = W.stateIndex(statef, True)
+                    W.addTransitionQ(sti, statef, x, y, notDone, done)
+
+        return W
+
+    @staticmethod
+    def matchLabels(u,v, x,y):
+        """
+        TODO: document
+        """
+        # We say that  "u/v  matches  x/y"  is true, if:
+        # u=x and v=y, or
+        if u == x and v == y:
+            return True
+        # u/v = @s/@s and x=y and x,y != Epsilon,  or
+        if u == AnySet and v == AnySet and x == y and x != Epsilon and y != Epsilon:
+            return True
+        # u/v = @s/@d and x!=y and x,y != Epsilon,  or
+        if u == AnySet and v == DiffSet and x != y and x != Epsilon and y != Epsilon:
+            return True
+        # u/v = @s/@epsilon and x != Epsilon and
+        #                                y= Epsilon,  or
+        if u == AnySet and v == Epsilon and x != Epsilon and y == Epsilon:
+            return True
+        # u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
+        if u == Epsilon and v == AnySet and x == Epsilon and y != Epsilon:
+            return True
+        return False
+
+
+    def productInput(self, other):
+        """Returns a transducer (skeleton) resulting from the execution of the transducer with the automaton as
+        filter on the input.
+
+        :param NFA other: the automaton used as filter
+        :rtype: SFT"""
+
+        # print('self', self)
+        # print('other', other)
+        new = SFT() # Not symbolic transducer
+        # Sigma
+        new.setSigma(self.Sigma.union(other.Sigma))
+        # Exclude Symbols from alphabet
+        new.Sigma.discard(AnySet)
+        new.Sigma.discard(DiffSet)
+
+        notDone = set()
+        done = set()
+        for s1 in [self.States[x] for x in self.Initial]:
+            # print('s1', s1)
+            for s2 in [other.States[x] for x in other.Initial]:
+                sname = (s1, s2)
+                sti = new.addState(sname)
+                new.addInitial(sti)
+                notDone.add(sname)
+        while notDone:
+            state = notDone.pop()
+            done.add(state)
+            (s1, s2) = state
+            # print('state', state)
+            sti = new.stateIndex(state)
+            # Get states
+            (i1, i2) = (self.stateIndex(s1), other.stateIndex(s2))
+            # Get input symbols from those states
+            (k1, k2) = (self.inputS(i1), other.inputS(i2))
+
+            # Check if AnySet symbol is input
+            # allowAny = AnySet in
+            if AnySet in k1:
+                ks = k2
+            else:
+                ks = k1.intersection(k2)
+            # print(i1, 'k1', k1, i2, 'k2', k2, 'ks', ks)
+
+            # Intersecting Input Labels
+            # for k in k1.intersection(k2):
+            for k in ks:
+
+                # try:
+                #     dk1 = self.delta[i1][k]
+                # except KeyError:
+                #     dk1 = self.delta[i1][AnySet]
+
+                # Find outputs for given input k
+                if k in self.delta[i1]:
+                    dk1 = self.delta[i1][k]
+                elif AnySet in self.delta[i1] and k != Epsilon:
+                    dk1 = self.delta[i1][AnySet]
+                else:
+                    dk1 = []
+                # # print('k', k, 'dk1', dk1)
+
+                # For each possible pair of outputs
+                # symo = output symbol, o1 is destination state
+                #     for (symo, o1) in self.delta[i1][k]:
+                for (symo, o1) in dk1:
+                    # print('symo', symo, 'o1', o1)
+                    # Get list of destination states
+                    dk2 = other.delta[i2][k]
+
+                    # Create list of transitions
+                    symos = [symo]
+                    if symo == AnySet:
+                        # Is symbolic AnySet
+                        # Check if input symbol is Epsilon
+                        if k == Epsilon:
+                            symos = [s for s in new.Sigma if s != Epsilon]
+                        else:
+                            symos = [k]
+                    elif symo == DiffSet:
+                        symos = [s for s in new.Sigma if s != AnySet and s != k]
+
+                    # Create the transitions
+                    #         for o2 in other.delta[i2][k]:
+                    for o2 in dk2:
+                        # print('ssft transition', sti, o1, o2, k, symo)
+                        # print('states', self.States, self.States[o1], other.States[o2])
+                        for symo in symos:
+                            #             new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
+                            new.addTransitionQ(sti, (self.States[o1], other.States[o2]), k, symo, notDone, done)
+        return new
+
 
 
 class NFT(SFT):

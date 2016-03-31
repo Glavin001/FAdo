@@ -30,7 +30,6 @@ from common import *
 from unionFind import UnionFind
 import graphs
 
-
 class SemiDFA(Drawable):
     # noinspection PyUnresolvedReferences
     """Class of automata without initial or final states
@@ -53,7 +52,7 @@ class SemiDFA(Drawable):
         :param sti: state index
         :type sti: int
         :param sep: separator
-        :type sep: str        
+        :type sep: str
         :rtype: str """
         return "node [shape = circle]; \"{0:s}\";{1:s}".format(self.States[sti].__str__(), sep)
 
@@ -2529,6 +2528,113 @@ class NFA(OFA):
                 index += 1
         return dfa
 
+    def toSFT(self, other):
+        """Construct a SFT equivalent to this NFA.
+
+            Consider the NFA method   "A.__and__(B)"
+            between NFAs A and B,  which returns an NFA
+            accepting  L(A) intersection L(B)  ("__and__"
+            relies on the NFA method "product"). Use it as a
+            guide to define  the  product construction method
+            A.toSFT(B), where  A and B are NFAs,  which
+            would return an   SFT  T  as follows:
+            ---
+            Input alphabet    of T =  A.Sigma
+            Output alphabet of T =  B.Sigma
+            start states of T: all pairs (sA,sB), where
+              sA=any start state of A, sB=any start state of B
+            final states of T: all pairs (fA,fB), where
+              fA=any final state of A, fB=any final state of B
+            for any transitions (a1,x,a2) in A and (b1,y,b2) in B
+              add the transition ((a1,b1), x/y, (a2,b2)) in T
+            for any transition (a1,x,a2) in A and any state b in B
+             add the transition ((a1,b), x/@epsilon,(a2,b)) in T
+            for any state a in A and transition (b1,y,b2) in B
+             add the transition ((a,b1),@epsilon/y, (a,b2)) in T
+
+        :param NFA|DFA other: the right hand operand
+        :rtype: SFT
+        :raises FAdoGeneralError: if any operand is not an NFA"""
+
+        # Setup
+        from transducers import SFT
+        A = self
+        B = other
+        T = SFT()
+        # Input alphabet    of T =  A.Sigma
+        T.setSigma(A.Sigma)
+        # Output alphabet of T =  B.Sigma
+        T.setOutput(B.Sigma)
+
+        notDone = set()
+        done = set()
+
+        # Initial States
+        # start states of T: all pairs (sA,sB), where
+        #   sA=any start state of A, sB=any start state of B
+        for sA in [A.States[x] for x in A.Initial]:
+            for sB in [B.States[x] for x in B.Initial]:
+                sname = (sA, sB)
+                T.addInitial(T.stateIndex(sname, True))
+                if sname not in notDone:
+                    notDone.add(sname)
+
+        # Final States
+        # final states of T: all pairs (fA,fB), where
+        #   fA=any final state of A, fB=any final state of B
+        for fA in [A.States[x] for x in A.Final]:
+            for fB in [B.States[x] for x in B.Final]:
+                sname = (fA, fB)
+                T.addFinal(T.stateIndex(sname, True))
+                # if (fA, fB) not in notDone:
+                #     notDone.append((fA, fB))
+
+        # TODO: Remove this
+        def ma(s):
+            return s
+
+        #  for any transitions (a1,x,a2) in A and (b1,y,b2) in B
+        #       add the transition ((a1,b1), x/y, (a2,b2)) in T
+        for (a1,x,a2) in A.allTransitions():
+            for (b1,y,b2) in B.allTransitions():
+                sti = T.stateIndex((ma(a1),ma(b1)), True) # Find or auto-create state
+                # stif = T.stateIndex((ma(a2),ma(b2)), True)
+                stif = (a2, b2)
+                T.addTransitionQ(sti, stif, x, y, notDone, done)
+
+        #  for any transition (a1,x,a2) in A and any state b in B
+        #      add the transition ((a1,b), x/@epsilon,(a2,b)) in T
+        for (a1,x,a2) in A.allTransitions():
+            # for b in [B.States[x] for x in B.States]:
+            for b in B.States:
+                sti = T.stateIndex((ma(a1),ma(b)), True) # Find or auto-create state
+                # stif = T.stateIndex((ma(a2),ma(b)), True)
+                stif = (a2, b)
+                T.addTransitionQ(sti, stif, x, Epsilon, notDone, done)
+
+        #  for any state a in A and transition (b1,y,b2) in B
+        #      add the transition ((a,b1),@epsilon/y, (a,b2)) in T
+        # for a in [A.States[x] for x in A.States]:
+        for a in A.States:
+            for (b1,y,b2) in B.allTransitions():
+                sti = T.stateIndex((ma(a),ma(b1)), True) # Find or auto-create state
+                # stif = T.stateIndex((ma(a),ma(b2)), True)
+                stif = (a, b2)
+                T.addTransitionQ(sti, stif, Epsilon, y, notDone, done)
+
+        return T
+
+    def allTransitions(self):
+        """List of all transitions.
+
+        :returns: list of all transitions in form (state, symbol, target).
+        :rtype: list"""
+        for state in self.delta:
+            for symbol in self.delta[state]:
+                for target in self.delta[state][symbol]:
+                    # yield (state, symbol, target)
+                    yield (self.States[state], symbol, self.States[target])
+
     def hasTransitionP(self, state, symbol=None, target=None):
         """Whether there's a transition from given state, optionally through given symbol,
         and optionally to a specific target.
@@ -2986,7 +3092,7 @@ class NFA(OFA):
             words += e.Words
         return words
 
-    
+
 # noinspection PyTypeChecker
 class NFAr(NFA):
     """Class for Non-deterministic Finite Automata with reverse delta function added by construction.
