@@ -143,7 +143,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
         st = timedelta(0)
         profile = cProfile.Profile()
         sprofile = cProfile.Profile()
-        for i in xrange(1,NUM_RUNS):
+        for _ in xrange(1,NUM_RUNS):
             a = datetime.now()
             if _PROFILE: profile.enable()
             prod1 = sft1.runOnNFA(nfa1)
@@ -189,7 +189,7 @@ class SymbolicSFTTestCase(unittest.TestCase):
         st = timedelta(0)
         profile = cProfile.Profile()
         sprofile = cProfile.Profile()
-        for i in xrange(1,NUM_RUNS):
+        for _ in xrange(1,NUM_RUNS):
             a = datetime.now()
             if _PROFILE: profile.enable()
             prod1 = sft1.runOnNFA(nfa1)

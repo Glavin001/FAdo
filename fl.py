@@ -111,10 +111,7 @@ class FL(object):
         .. attention::
            Unless Strict flag is set to True, alphabet can only be enlarged.  The resulting alphabet is  in fact the
            union of the former alphabet with the new one. If flag is set to True, the alphabet is simply replaced."""
-        if Strict:
-            self.Sigma = Sigma
-        else:
-            self.Sigma = self.Sigma.union(Sigma)
+        self.Sigma = Sigma if Strict else self.Sigma.union(Sigma)
 
     def addWords(self, wList):
         """Adds a list of words to a FL
@@ -256,7 +253,7 @@ class AFA(object):
        This is just a container for some common methods. **Not to be used directly!!**"""
     def __init__(self):
         self.Dead = None
-        self.delta = dict()
+        self.delta = {}
         self.Initial = None
         self.States = []
         self.Final = set()
@@ -682,19 +679,16 @@ class RndWGen(object):
         :param aut: automata recognizing the language
         :type aut: ADFA """
         self.Sigma = list(aut.Sigma)
-        self.table = dict()
+        self.table = {}
         self.aut = aut.minimal()
         rank, _ = self.aut.evalRank()
         deltai = self.aut.deltaR()
         mrank = max(rank)
-        for i in range(0, mrank + 1):
+        for i in range(mrank + 1):
             for s in rank[i]:
                 self.table.setdefault(s, {})
-                if self.aut.finalP(s):
-                    final = 1
-                else:
-                    final = 0
-                self.table[s][None] = sum([self.table[s].get(c, 0) for c in self.Sigma])
+                final = 1 if self.aut.finalP(s) else 0
+                self.table[s][None] = sum(self.table[s].get(c, 0) for c in self.Sigma)
                 for c in self.Sigma:
                     rs = deltai[s].get(c, [])
                     for r in rs:
@@ -833,10 +827,7 @@ def genRndTrieBalanced(maxL, Sigma, safe=True):
     def _genEnsurance(m, alphabet):
         l = len(alphabet)
         fair = m / l
-        if m % l == 0:
-            odd = 0
-        else:
-            odd = 1
+        odd = 0 if m % l == 0 else 1
         pool = copy(alphabet)
         c = {}
         sl = []
@@ -855,10 +846,7 @@ def genRndTrieBalanced(maxL, Sigma, safe=True):
     def _descend(s1, ens, safe1, m, cont):
         sons = 0
         if not safe1:
-            if _legal(cont):
-                final = random.randint(0, 1)
-            else:
-                final = 0
+            final = random.randint(0, 1) if _legal(cont) else 0
         # noinspection PyUnboundLocalVariable
         if safe1:
             trie.addFinal(s1)
@@ -866,10 +854,7 @@ def genRndTrieBalanced(maxL, Sigma, safe=True):
         elif final == 1:
             trie.addFinal(s1)
         if m != 0:
-            if safe1:
-                ks = ens.pop()
-            else:
-                ks = None
+            ks = ens.pop() if safe1 else None
             for k1 in trie.Sigma:
                 ss = trie.addState()
                 trie.addTransition(s1, k1, ss)
@@ -933,20 +918,14 @@ def genRndTrieUnbalanced(maxL, Sigma, ratio, safe=True):
     def _descend(s1, ens, safe1, m, cont):
         sons = 0
         if not safe1:
-            if _legal(cont):
-                final = random.randint(0, 1)
-            else:
-                final = 0
+            final = random.randint(0, 1) if _legal(cont) else 0
         if safe1:
             trie.addFinal(s1)
             final = 1
         elif final == 1:
             trie.addFinal(s1)
         if m:
-            if safe1:
-                ks = ens.pop()
-            else:
-                ks = None
+            ks = ens.pop() if safe1 else None
             for k1 in trie.Sigma:
                 ss = trie.addState()
                 trie.addTransition(s1, k1, ss)
@@ -1002,10 +981,7 @@ def genRandomTrie(maxL, Sigma, safe=True):
         elif final == 1:
             trie.addFinal(s1)
         if m:
-            if safe1:
-                ks = ens.pop()
-            else:
-                ks = None
+            ks = ens.pop() if safe1 else None
             for k in trie.Sigma:
                 ss = trie.addState()
                 trie.addTransition(s1, k, ss)
@@ -1048,7 +1024,6 @@ def genRndTriePrefix(maxL, Sigma, ClosedP=False, safe=True):
         return [sl[random.randint(0, l - 1)] for _ in xrange(m)]
 
     def _descend(s1, ens, saf, m):
-        sons = ClosedP
         if m is 0:
             final = random.randint(0, 1)
             if saf or final == 1:
@@ -1057,39 +1032,27 @@ def genRndTriePrefix(maxL, Sigma, ClosedP=False, safe=True):
             else:
                 return False
         else:
-            if saf is True:
-                ks = ens.pop()
-            else:
-                ks = None
+            ks = ens.pop() if saf is True else None
+            sons = ClosedP
             for k in trie.Sigma:
                 ss = trie.addState()
                 trie.addTransition(s1, k, ss)
                 r = _descend(ss, ens, k == ks, m - 1)
-                if not ClosedP:
-                    sons |= r
-                else:
+                if ClosedP:
                     sons &= 1
-            if not ClosedP:
-                if not sons:
-                    final = random.randint(0, 1)
-                    if final == 1:
-                        trie.addFinal(s1)
-                        return True
-                    else:
-                        return False
                 else:
-                    return True
+                    sons |= r
+            if sons:
+                if ClosedP:
+                    trie.addFinal(s1)
+                return True
             else:
-                if not sons:
-                    final = random.randint(0, 1)
-                    if final == 1:
-                        trie.addFinal(s1)
-                        return True
-                    else:
-                        return False
-                else:
+                final = random.randint(0, 1)
+                if final == 1:
                     trie.addFinal(s1)
                     return True
+                else:
+                    return False
 
     if safe:
         ensurance = _genEnsurance(maxL, Sigma)

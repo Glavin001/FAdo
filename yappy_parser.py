@@ -168,8 +168,7 @@ class Lexer(object):
         if not st:
             raise IOError
         if isinstance(st, StringType):
-            s = self.scan(st)
-            return s
+            return self.scan(st)
 
 
 class YappyError(Exception):
@@ -334,7 +333,7 @@ class CFGrammar(object):
                 self.ntr[r[0]].append(i)
             for j in range(len(r[1]) + 1):
                 self.ritems.append((i, j))
-            i = i + 1
+            i += 1
 
     def __str__(self):
         """Grammar rules
@@ -345,7 +344,7 @@ class CFGrammar(object):
         for n in range(len(self.rules)):
             lhs = self.rules[n][0]
             rhs = self.rules[n][1]
-            s = s + "%s | %s -> %s \n" % (n, lhs, string.join(rhs, " "))
+            s += "%s | %s -> %s \n" % (n, lhs, string.join(rhs, " "))
         return "Grammar Rules:\n\n%s" % s
 
     def makeFFN(self):
@@ -400,15 +399,12 @@ class CFGrammar(object):
         derived from s """
         first = Set([])
         e = 0
-        for i in range(len(s)):
-            first.s_extend(self.first[s[i]])
-            if not self.nullable[s[i]]:
+        for item in s:
+            first.s_extend(self.first[item])
+            if not self.nullable[item]:
                 e = 1
                 break
-        if e == 0:
-            self.nullable[string.join(s)] = 1
-        else:
-            self.nullable[string.join(s)] = 0
+        self.nullable[string.join(s)] = 1 if e == 0 else 0
         return first
 
     def FIRST_ONE(self):
@@ -521,9 +517,8 @@ class CFGrammar(object):
         self.nd = {}
         self.ms = Stack()
         for s in self.nonterminals:
-            if self.ntr.has_key(s):
-                if s not in self.close_nt:
-                    self.TRAVERSE(s, 1)
+            if self.ntr.has_key(s) and s not in self.close_nt:
+                self.TRAVERSE(s, 1)
 
     def TRAVERSE(self, s, d):
         """ """
@@ -648,14 +643,13 @@ class CFGrammar(object):
                                         self.derive_ter[s] = Set([])
                                     if self.derive_ter[s].s_append(r[i]):
                                         e = 1
-                                break
                             else:
                                 if not self.derive_ter.has_key(s):
                                     self.derive_ter[s] = Set([])
                                 if self.derive_ter[s].s_append(r[i]):
                                     e = 1
 
-                                break
+                            break
                         else:
                             """ non-terminal"""
                             if self.derive_ter.has_key(r[i]):
@@ -888,13 +882,17 @@ class SLRtable(LRtable):
         s = ""
         j = 0
         for i in c:
-            s = s + "I_%d: \n" % j
+            s += "I_%d: \n" % j
             for item in i:
                 r, p = item
                 lhs = self.gr.rules[r][0]
                 rhs = self.gr.rules[r][1]
-                s = s + "\t %s -> %s . %s \n" % (lhs,
-                                                 string.join(rhs[:p], " "), string.join(rhs[p:], " "))
+                s += "\t %s -> %s . %s \n" % (
+                    lhs,
+                    string.join(rhs[:p], " "),
+                    string.join(rhs[p:], " "),
+                )
+
             j += 1
         return s
 
@@ -962,8 +960,7 @@ class LR1table(LRtable):
             for i in c:
                 for s in symbols:
                     valid = self.goto(i, s)
-                    if valid != []:
-                        if c.s_append(valid): e = 1
+                    if valid != [] and c.s_append(valid): e = 1
         return c
 
     def print_items(self, c):
@@ -1048,8 +1045,7 @@ class LALRtable1(LRtable):
         list of terminals: is coded as a dictonary with key
         C{(rule_number,dot_position)} and value a set of terminals
         """
-        i0 = {}
-        i0[(len(self.gr.rules) - 1, 0)] = Set([self.gr.endmark])
+        i0 = {(len(self.gr.rules) - 1, 0): Set([self.gr.endmark])}
         c = Set([self.closure(i0)])
         symbols = self.gr.terminals + self.gr.nonterminals
         e = 1
@@ -1225,8 +1221,7 @@ class LALRtable(LALRtable1):
         of terminals: is coded as a dictionary with key
         C{(rule_number,dot_position)} and value a set of terminals.
         """
-        i0 = {}
-        i0[(len(self.gr.rules) - 1, 0)] = Set([self.gr.endmark])
+        i0 = {(len(self.gr.rules) - 1, 0): Set([self.gr.endmark])}
         c = Set([i0])
         symbols = self.gr.terminals + self.gr.nonterminals
         """ kernel LR(0) items """
@@ -1250,8 +1245,7 @@ class LALRtable(LALRtable1):
             lh[nk] = {}  #Set([])
             for (n, i) in k.keys():
                 lh[nk][(n, i)] = Set([])
-                j = {}
-                j[(n, i)] = Set([(self.gr.dummy)])
+                j = {(n, i): Set([(self.gr.dummy)])}
                 j = self.closure(j)
                 for s in symbols:
                     for (m1, j1) in j.keys():
@@ -1284,9 +1278,8 @@ class LALRtable(LALRtable1):
         valid = {}
         for (n, i) in items.keys():
             x = self.NextToDot((n, i))
-            if x == s:
-                if not valid.has_key((n, i + 1)):
-                    valid[(n, i + 1)] = Set([])
+            if x == s and not valid.has_key((n, i + 1)):
+                valid[(n, i + 1)] = Set([])
             if self.gr.close_nt.has_key(x):
                 for a in self.gr.close_nt[x].keys():
                     if self.gr.ntr.has_key(a):
@@ -1398,20 +1391,15 @@ class LRparser(object):
         self.terminals = self.cfgr.terminals
         self.nonterminals = self.cfgr.nonterminals
         self.endmark = self.cfgr.endmark
-        if 'nosemrules' in args:
-            self.nosemrules = args['nosemrules']
-        else:
-            self.nosemrules = 0
-
+        self.nosemrules = args['nosemrules'] if 'nosemrules' in args else 0
         db = whichdb.whichdb(table_shelve)
-        if not (db == None or db == "" or no_table == 0):
+        if db is not None and db != "" and no_table != 0:
             try:
                 d = shelve.open(table_shelve, 'w')
                 self.ACTION = d['action']
                 self.GOTO = d['goto']
-                if d.has_key('version'):
-                    if d['version'] < _Version:
-                        raise TableError(table_shelve)
+                if d.has_key('version') and d['version'] < _Version:
+                    raise TableError(table_shelve)
                 try:
                     self.Log = d['log']
                 except KeyError:
@@ -1465,42 +1453,31 @@ class LRparser(object):
                 a3 = "\n%s" % i
                 for a in self.terminals:
                     if self.ACTION.has_key((i, a)):
-                        if self.ACTION[i, a][0] == "shift":
-                            x = "s"
-                        else:
-                            x = "r"
+                        x = "s" if self.ACTION[i, a][0] == "shift" else "r"
                         a2 = "\t%s%s" % (x, self.ACTION[i, a][1])
                     else:
                         a2 = "\t"
                     a3 = a3 + a2
                 a1 = "%s%s" % (a1, a3)
-            ac = a1
         else:
             for i in Set(l):
                 a3 = "%s\n" % i
                 for a in self.terminals:
                     if self.ACTION.has_key((i, a)):
-                        if self.ACTION[i, a][0] == "shift":
-                            x = "s"
-                        else:
-                            x = "r"
+                        x = "s" if self.ACTION[i, a][0] == "shift" else "r"
                         a3 = a3 + "%s = %s%s\n" % (a, x, self.ACTION[i, a][1])
                 a1 = "%s%s" % (a1, a3)
-            ac = a1
-
+        ac = a1
         l = (map(lambda x: x[0], self.GOTO.keys()))
         l.sort()
         a1 = "\nState\n"
         if len(self.nonterminals) < 20:
             for a in self.nonterminals:
-                a1 = a1 + " \t%s" % a
+                a1 += " \t%s" % a
             for i in Set(l):
                 a3 = "\n%s" % i
                 for a in self.nonterminals:
-                    if self.GOTO.has_key((i, a)):
-                        a2 = "\t%s" % self.GOTO[(i, a)]
-                    else:
-                        a2 = "\t"
+                    a2 = "\t%s" % self.GOTO[(i, a)] if self.GOTO.has_key((i, a)) else "\t"
                     a3 = a3 + a2
                 a1 = "%s%s" % (a1, a3)
         else:
@@ -1623,9 +1600,7 @@ class LRparser(object):
         rl = string.split(rulestr, sym['ruleend'])
         for l in rl:
             m = re.compile(sym['rulesym']).search(l)
-            if not m:
-                continue
-            else:
+            if m:
                 if m.start() == 0:
                     raise GrammarError(l)
                 else:
@@ -1648,11 +1623,7 @@ class LRparser(object):
                                 op = None
                             else:
                                 m = re.search(sym['semsym'] + '(?P<opsem>.*)' + sym['csemsym'], rest)
-                                if not m:
-                                    rhs = string.split(rest, None)
-                                    sem = DefaultSemRule
-                                    op = None
-                                else:
+                                if m:
                                     if m.start() == 0:
                                         raise GrammarError(rest)
                                     else:
@@ -1670,10 +1641,16 @@ class LRparser(object):
                                     else:
                                         sem = DefaultSemRule
                                         op = None
-                                if op == None:
+                                else:
+                                    rhs = string.split(rest, None)
+                                    sem = DefaultSemRule
+                                    op = None
+                                if op is None:
                                     gr.append((lhs, rhs, eval(sem)))
                                 else:
                                     gr.append((lhs, rhs, eval(sem), eval(op)))
+            else:
+                continue
         return gr
 
 
@@ -1703,10 +1680,10 @@ class LRBuildparser(object):
             elif self.table.ACTION[s, a][0] == 'shift':
                 # self.stack.push(a)
                 self.stack.push(self.table.ACTION[s, a][1])
-                self.ip = self.ip + 1
+                self.ip += 1
             elif self.table.ACTION[s, a][0] == 'reduce':
                 n = self.table.ACTION[s, a][1]
-                for i in range(len(self.table.gr.rules[n][1])):
+                for _ in self.table.gr.rules[n][1]:
                     self.stack.pop()
                 s1 = self.stack.top()
                 a = self.table.gr.rules[n][0]
@@ -1744,10 +1721,7 @@ def grules(rules_list, rulesym="->", rhssep=None):
     gr = []
     sep = re.compile(rulesym)
     for r in rules_list:
-        if type(r) is StringType:
-            rule = r
-        else:
-            rule = r[0]
+        rule = r if type(r) is StringType else r[0]
         m = sep.search(rule)
         if not m:
             continue
@@ -1760,10 +1734,7 @@ def grules(rules_list, rulesym="->", rhssep=None):
                 raise GrammarError(rule)
             else:
                 rest = string.strip(rule[m.end():])
-                if rest == "[]":
-                    rhs = []
-                else:
-                    rhs = string.split(rest, rhssep)
+                rhs = [] if rest == "[]" else string.split(rest, rhssep)
         if type(r) is StringType:
             gr.append((lhs, rhs, DefaultSemRule))
         elif len(r) == 3:
@@ -2087,7 +2058,7 @@ class Set(object):
     def __init__(self, list=[]):
         foo = []
         for m in list:
-            if not m in foo:
+            if m not in foo:
                 foo.append(m)
         self.members = foo
 
@@ -2103,7 +2074,7 @@ class Set(object):
     def __add__(self, other):
         new = Set(self.members[:])
         for v in other:
-            if not v in new:
+            if v not in new:
                 new.append(v)
         return new
 
@@ -2123,9 +2094,8 @@ class Set(object):
         return new
 
     def __cmp__(self, other):
-        if len(self) == len(other):
-            if not len(self - other):
-                return (0)
+        if len(self) == len(other) and not len(self - other):
+            return (0)
         return (1)
 
     def __len__(self):
@@ -2148,12 +2118,12 @@ class Set(object):
         del self.members[key]
 
     def append(self, member):
-        if not member in self.members:
+        if member not in self.members:
             self.members.append(member)
 
     def s_append(self, member):
         e = 0
-        if not member in self.members:
+        if member not in self.members:
             self.members.append(member)
             e = 1
         return e
@@ -2164,7 +2134,7 @@ class Set(object):
     def s_extend(self, other):
         e = 0
         for v in other:
-            if not v in self:
+            if v not in self:
                 self.members.append(v)
                 e = 1
         return e
