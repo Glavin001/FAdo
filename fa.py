@@ -250,10 +250,7 @@ class FA(Drawable):
 
         :param int st: index of the state
         :rtype: bool"""
-        if st > (len(self.States) - 1):
-            return False
-        else:
-            return True
+        return st <= len(self.States) - 1
 
     def addState(self, name=None):
         """Adds a new state to an FA. If no name is given a new name is created.
@@ -436,10 +433,7 @@ class FA(Drawable):
         :returns: the list of state indexes
         :rtype: Set of int
         :raises DFAstateUnknown: if a state name is unknown"""
-        lst = set()
-        for s in lstn:
-            lst.add(self.stateIndex(s))
-        return lst
+        return {self.stateIndex(s) for s in lstn}
 
     def plus(self):
         """Plus of a FA (star without the adding of epsilon)
@@ -568,7 +562,7 @@ class FA(Drawable):
         :rtype: int
 
         .. versionchanged:: 1.0"""
-        return sum([len(self.delta[i]) for i in self.delta])
+        return sum(len(self.delta[i]) for i in self.delta)
 
     def inputS(self, i):
         """Input labels coming out of state i
@@ -722,10 +716,7 @@ class OFA(FA):
 
         .. versionadded:: 1.0"""
         a = self.initialComp()
-        for s in a:
-            if self.finalP(s):
-                return False
-        return True
+        return not any(self.finalP(s) for s in a)
 
     def dump(self):
         """Returns a python representation of the object
@@ -739,10 +730,7 @@ class OFA(FA):
         dt = []
         for i in xrange(self.__len__()):
             for c in self.delta.get(i, []):
-                if c == Epsilon:
-                    ci = -1
-                else:
-                    ci = sig.index(c)
+                ci = -1 if c == Epsilon else sig.index(c)
                 for j in forceIterable(self.delta[i][c]):
                     dt.append((i, ci, j))
         return tags, self.States, sig, dt, I, F
@@ -1047,10 +1035,7 @@ class OFA(FA):
         gfa.lab = {}
         gfa.out_index = {}
         for i in xrange(len(gfa.States)):
-            if i not in gfa.delta:
-                gfa.out_index[i] = 0
-            else:
-                gfa.out_index[i] = len(gfa.delta[i])
+            gfa.out_index[i] = 0 if i not in gfa.delta else len(gfa.delta[i])
         topoOrder = gfa.topoSort()
         for v in topoOrder:  # States should be topologically ordered
             i = len(gfa.predecessors[v])
@@ -1086,7 +1071,7 @@ class OFA(FA):
         for st in xrange(len(gfa.States)):
             if st != gfa.Initial and st not in gfa.Final:
                 weights[st] = gfa.weight(st)
-        for i in xrange(len(gfa.States) - 2):
+        for _ in xrange(len(gfa.States) - 2):
             m = [(v, u) for (u, v) in weights.items()]
             m = min(m)
             m = m[1]
@@ -1145,7 +1130,7 @@ class OFA(FA):
         for st in xrange(len(gfa.States)):
             if st != gfa.Initial and st not in gfa.Final:
                 weights[st] = gfa.weight(st)
-        for i in xrange(len(gfa.States) - n):
+        for _ in xrange(len(gfa.States) - n):
             m = [(v, u) for (u, v) in weights.items()]
             m = min(m)
             m = m[1]
@@ -1238,7 +1223,7 @@ class OFA(FA):
         for st in xrange(len(gfa.States)):
             if st != gfa.Initial and st not in gfa.Final:
                 weights[st] = gfa.weightWithCycles(st, cycles)
-        for i in xrange(len(gfa.States) - n):
+        for _ in xrange(len(gfa.States) - n):
             m = [(v, u) for (u, v) in weights.items()]
             m = min(m)
             m = m[1]
@@ -1306,7 +1291,7 @@ class OFA(FA):
         for st in xrange(len(gfa.States)):
             if st != gfa.Initial and st not in gfa.Final:
                 weights[st] = gfa.weightWithCycles(st, cycles)
-        for i in xrange(len(gfa.States) - n):
+        for _ in xrange(len(gfa.States) - n):
             m = [(v, u) for (u, v) in weights.items()]
             m = min(m)
             m = m[1]
@@ -1444,10 +1429,8 @@ class OFA(FA):
 
         :returns: state->list of cycle lengths
         :rtype: dict"""
-        cycles = {}
         seen = []
-        for i, _ in enumerate(self.States):
-            cycles[i] = 0
+        cycles = {i: 0 for i, _ in enumerate(self.States)}
         (bkE, multipl) = self._DFSBackEdges()
         for (x, y) in bkE:
             self._chkForCycles(y, x, cycles, seen, multipl)
@@ -1669,10 +1652,7 @@ class NFA(OFA):
         :param NFA|DFA other: the other NFA
         :returns: the result of the concatenation
         :rtype: NFA"""
-        if isinstance(other, DFA):
-            par2 = other.toNFA()
-        else:
-            par2 = other
+        par2 = other.toNFA() if isinstance(other, DFA) else other
         new = self._copySkell(par2)
         for i in self.Initial:
             new.addInitial(new.stateIndex((0, i)))
@@ -1692,7 +1672,7 @@ class NFA(OFA):
         :rtype: str"""
         done = set()
         notDone = set()
-        pref = dict()
+        pref = {}
         for si in self.Initial:
             pref[si] = Epsilon
             notDone.add(si)
@@ -1765,12 +1745,11 @@ class NFA(OFA):
         fin = copy(new.Final)
         nf = new.addState()
         new.addFinal(nf)
+        ni = new.addState()
         if not flag:
-            ni = new.addState()
             new.setInitial([ni])
             new.addTransition(ni, Epsilon, nf)
         else:
-            ni = new.addState()
             nni = new.addState()
             new.setInitial([nni])
             new.addTransition(nni, Epsilon, ni)
@@ -1839,7 +1818,7 @@ class NFA(OFA):
     def succintTransitions(self):
         """ Collects the transition information in a concat way suitable for graphical representation.
         :rtype: list"""
-        foo = dict()
+        foo = {}
         for s in self.delta:
             for c in self.delta[s]:
                 for s1 in self.delta[s][c]:
@@ -1848,8 +1827,7 @@ class NFA(OFA):
                         foo[k] = []
                     foo[k].append(c)
         l = []
-        for k in foo:
-            cs = foo[k]
+        for k, cs in foo.items():
             s = "%s" % graphvizTranslate(str(cs[0]))
             for c in cs[1:]:
                 s += ", %s" % graphvizTranslate(str(c))
@@ -1875,16 +1853,16 @@ class NFA(OFA):
             if state not in del_states:
                 rename_map[state] = len(new_states)
                 new_states.append(self.States[state])
-        for state in rename_map:
+        for state, value in rename_map.items():
             if state in self.Final:
-                new_final.add(rename_map[state])
+                new_final.add(value)
             if state not in self.delta:
                 continue
-            if not len(self.delta[state]) == 0:
+            if len(self.delta[state]) != 0:
                 new_delta[rename_map[state]] = {}
             for symbol in self.delta[state]:
-                new_targets = set([rename_map[s] for s in self.delta[state][symbol]
-                                   if s in rename_map])
+                new_targets = {rename_map[s] for s in self.delta[state][symbol]
+                                               if s in rename_map}
                 if new_targets:
                     new_delta[rename_map[state]][symbol] = new_targets
         self.States = new_states
@@ -2012,10 +1990,7 @@ class NFA(OFA):
 
         .. attention::
            ``st`` must exist."""
-        if type(st) is set:
-            s2 = set(st)
-        else:
-            s2 = {st}
+        s2 = set(st) if type(st) is set else {st}
         s1 = set()
         while s2:
             s = s2.pop()
@@ -2083,10 +2058,7 @@ class NFA(OFA):
             ilist = self.evalSymbol(ilist, c)
             if not ilist:
                 return False
-        for f in self.Final:
-            if f in ilist:
-                return True
-        return False
+        return any(f in ilist for f in self.Final)
 
     def evalSymbol(self, stil, sym):
         """Set of states reacheable from given states through given symbol and epsilon closure.
@@ -2399,7 +2371,7 @@ class NFA(OFA):
 
             :param srcI: source state
             :param dest: destination state"""
-            if not (dest in done or dest in notDone):
+            if dest not in done and dest not in notDone:
                 iN = new.addState(dest)
                 notDone.append(dest)
             else:
@@ -2667,8 +2639,8 @@ class NFA(OFA):
         :rtype: set of int"""
         if initial_states is None:
             initial_states = self.Initial
-        useful = set([s for s in initial_states
-                      if s in self.Final])
+        useful = {s for s in initial_states
+                          if s in self.Final}
         stack = list(initial_states)
         preceding = {}
         for i in stack:
@@ -2808,11 +2780,11 @@ class NFA(OFA):
             :param mrkd:"""
             for s in self.delta[p]:
                 for desc_p in self.delta[p][s]:
-                    all_marked = True
-                    for desc_q in self.delta[q][s]:
-                        if (desc_p, desc_q) not in mrkd and (desc_q, desc_p) not in mrkd:
-                            all_marked = False
-                            break
+                    all_marked = not any(
+                        (desc_p, desc_q) not in mrkd and (desc_q, desc_p) not in mrkd
+                        for desc_q in self.delta[q][s]
+                    )
+
                     yield all_marked
 
         changed_marked = True
@@ -2977,8 +2949,7 @@ class NFA(OFA):
         """Number of transitions of a NFA
 
         :rtype: int"""
-        return sum([sum(map(len, self.delta[t].itervalues()))
-                    for t in self.delta])
+        return sum(sum(map(len, self.delta[t].itervalues())) for t in self.delta)
 
     def toGFA(self):
         """ Creates a GFA equivalent to NFA
@@ -3016,9 +2987,8 @@ class NFA(OFA):
         for c in self.Sigma:
             if c in self.delta[state]:
                 l += self.delta[state][c]
-        if not strict:
-            if state in l:
-                l.remove(state)
+        if not strict and state in l:
+            l.remove(state)
         return l
 
     def half(self):
@@ -3282,7 +3252,7 @@ class NFAr(NFA):
             else:
                 nfa = self.dup()
                 nfa.elimEpsilon()
-        return all([len(m) == 1 for m in nfa.deltaReverse.itervalues()])
+        return all(len(m) == 1 for m in nfa.deltaReverse.itervalues())
 
     def elimEpsilonO(self):
         """Eliminate epsilon-transitions from this automaton, with reduction of states through elimination of
@@ -3320,7 +3290,10 @@ class NFAr(NFA):
 
         .. note::
            if conditions aren't met, returned source state is None, and automaton remains unmodified."""
-        if not len(self.deltaReverse.get(state, [])) == 1 or not len(self.deltaReverse[state].get(Epsilon, [])) == 1:
+        if (
+            len(self.deltaReverse.get(state, [])) != 1
+            or len(self.deltaReverse[state].get(Epsilon, [])) != 1
+        ):
             return None
         source_state = self.deltaReverse[state][Epsilon].pop()
         self.delTransition(source_state, Epsilon, state, True)
@@ -3337,7 +3310,10 @@ class NFAr(NFA):
 
         .. note::
            if conditions aren't met, returned target state is None, and automaton remains unmodified."""
-        if not len(self.delta.get(state, [])) == 1 or not len(self.delta[state].get(Epsilon, [])) == 1:
+        if (
+            len(self.delta.get(state, [])) != 1
+            or len(self.delta[state].get(Epsilon, [])) != 1
+        ):
             return None
         target_state = self.delta[state][Epsilon].pop()
         self.delTransition(state, Epsilon, target_state, True)
@@ -3413,7 +3389,7 @@ class DFA(OFA):
         :rtype: list of tupples
 
         .. versionadded:: 0.9.8"""
-        foo = dict()
+        foo = {}
         for s in self.delta:
             for c in self.delta[s]:
                 k = (s, self.delta[s][c])
@@ -3421,8 +3397,7 @@ class DFA(OFA):
                     foo[k] = []
                 foo[k].append(c)
         l = []
-        for k in foo:
-            cs = foo[k]
+        for k, cs in foo.items():
             s = "%s" % str(cs[0])
             for c in cs[1:]:
                 s += ", %s" % str(c)
@@ -3511,8 +3486,7 @@ class DFA(OFA):
             if state not in del_states:
                 rename_map[state] = len(new_states)
                 new_states.append(self.States[state])
-        for state in rename_map:
-            state_renamed = rename_map[state]
+        for state, state_renamed in rename_map.items():
             if state in self.Final:
                 new_final.add(state_renamed)
             if state not in old_delta:
@@ -3604,7 +3578,7 @@ class DFA(OFA):
             ia = new.stateIndex(a)
             done.append(a)
             for sy in new.Sigma:
-                b = set([self.Delta(s, sy) for s in a])
+                b = {self.Delta(s, sy) for s in a}
                 b.discard(None)
                 if b not in done:
                     if b not in tbd:
@@ -3687,7 +3661,7 @@ class DFA(OFA):
             slist = lStates[index]
             si = d.stateIndex(slist)
             for s in self.Sigma:
-                stl = set([self.evalSymbol(s1, s) for s1 in slist if s in self.delta[s1]])
+                stl = {self.evalSymbol(s1, s) for s1 in slist if s in self.delta[s1]}
                 if not stl:
                     continue
                 if stl not in lStates:
@@ -3737,7 +3711,7 @@ class DFA(OFA):
                 slist = lStates[index]
                 si = d.stateName(slist)
                 for s in m.Sigma:
-                    stl = set([m.evalSymbol(s1, s) for s1 in slist if s in m.delta[s1]])
+                    stl = {m.evalSymbol(s1, s) for s1 in slist if s in m.delta[s1]}
                     if not stl:
                         continue
                     if stl not in lStates:
@@ -3779,13 +3753,9 @@ class DFA(OFA):
         """ Computes the minimal words that reach each state of DFA
 
         :rtype: dictionary with words"""
-        xList = dict()
+        xList = {}
         todo = [i for i in range(len(self.States))]
-        if isinstance(self.Initial, set):
-            rank = self.Initial
-        else:
-            rank = {self.Initial}
-
+        rank = self.Initial if isinstance(self.Initial, set) else {self.Initial}
         for i in rank:
             xList[i] = Epsilon
             todo.remove(i)
@@ -3796,7 +3766,7 @@ class DFA(OFA):
                     if i in self.delta and sym in self.delta[i]:
                         ss = self.delta[i][sym]
                         if isinstance(ss, set):
-                            for q in self.delta[i][sym]:
+                            for q in ss:
                                 if q in todo:
                                     xList[q] = sConcat(xList[i], sym)
                                     todo.remove(q)
@@ -3839,15 +3809,10 @@ class DFA(OFA):
                     i = aux.stateIndex(nt, True)
                     _addPool(pool, done, i)
                     aux.addTransition(idx, c, i)
-                    nt = (t[0], b.delta[t[1]][c], 1)
-                    i = aux.stateIndex(nt, True)
-                    _addPool(pool, done, i)
-                    aux.addTransition(idx, c, i)
-                else:
-                    nt = (t[0], b.delta[t[1]][c], 1)
-                    i = aux.stateIndex(nt, True)
-                    _addPool(pool, done, i)
-                    aux.addTransition(idx, c, i)
+                nt = (t[0], b.delta[t[1]][c], 1)
+                i = aux.stateIndex(nt, True)
+                _addPool(pool, done, i)
+                aux.addTransition(idx, c, i)
         new = DFA()
         t = set()
         for idx in aux.Initial:
@@ -3905,7 +3870,7 @@ class DFA(OFA):
             slist = lStates[index]
             si = d.stateIndex(slist)
             for s in foo.Sigma:
-                stl = set([foo.evalSymbol(s1, s) for s1 in slist if s in foo.delta[s1]])
+                stl = {foo.evalSymbol(s1, s) for s1 in slist if s in foo.delta[s1]}
                 if not stl:
                     continue
                 if stl not in lStates:
@@ -4009,7 +3974,7 @@ class DFA(OFA):
                 slist = lStates[index]
                 si = d.stateName(slist)
                 for s in m.Sigma:
-                    stl = set([m.evalSymbol(s1, s) for s1 in slist if s in m.delta[s1]])
+                    stl = {m.evalSymbol(s1, s) for s1 in slist if s in m.delta[s1]}
                     if not stl:
                         continue
                     if stl not in lStates:
@@ -4080,7 +4045,7 @@ class DFA(OFA):
 
         :param other: the other DFA"""
         n = SemiDFA()
-        n.States = set([(x, y) for x in self.States for y in other.States])
+        n.States = {(x, y) for x in self.States for y in other.States}
         n.Sigma = copy(self.Sigma)
         for (x, y) in n.States:
             for s in n.Sigma:
@@ -4104,19 +4069,13 @@ class DFA(OFA):
         :param initial: starting state index
         :type initial: int
         :rtype: bool"""
-        if initial is None:
-            state = self.Initial
-        else:
-            state = initial
+        state = self.Initial if initial is None else initial
         for c in word:
             try:
                 state = self.evalSymbol(state, c)
             except DFAstopped:
                 return False
-        if state in self.Final:
-            return True
-        else:
-            return False
+        return state in self.Final
 
     def evalSymbol(self, init, sym):
         """Returns the  state reached from given state through a given symbol.
@@ -4148,7 +4107,7 @@ class DFA(OFA):
         :type sym: str
         :returns: set of reached states
         :rtype: set of int"""
-        return set([self.evalSymbol(s, sym) for s in ls])
+        return {self.evalSymbol(s, sym) for s in ls}
 
     def reverseTransitions(self, rev):
         """Evaluate reverse transition function.
@@ -4247,10 +4206,7 @@ class DFA(OFA):
             stable = True
             for (i, j) in equiv:
                 for c in self.Sigma:
-                    if i is None:
-                        xi = None
-                    else:
-                        xi = self.delta.get(i, {}).get(c, None)
+                    xi = None if i is None else self.delta.get(i, {}).get(c, None)
                     xj = self.delta.get(j, {}).get(c, None)
                     p = _sortWithNone(xi, xj)
                     if xi != xj and p not in equiv:
@@ -4678,9 +4634,7 @@ class DFA(OFA):
 
         :rtype: bool"""
         foo = self.minimalIncremental(minimal_test=True)
-        if foo is None:
-            return False
-        return True
+        return foo is not None
 
     def minimalWatson(self, test_only=False):
         """Evaluates the equivalent minimal complete DFA using Waton's incremental algorithm
@@ -4750,9 +4704,7 @@ class DFA(OFA):
 
         :rtype: bool"""
         foo = self.minimalWatson(test_only=True)
-        if foo is None:
-            return False
-        return True
+        return foo is not None
 
     def markNonEquivalent(self, s1, s2, data):
         """Mark states with indexes s1 and s2 in given map as non equivalent states. If any back-effects exist,
@@ -4810,10 +4762,7 @@ class DFA(OFA):
                     foo = self.delta[s].keys()
                     for c in foo:
                         if c not in self.delta[subst[s]]:
-                            if self.delta[s][c] in subst:
-                                self.delta[subst[s]][c] = subst[self.delta[s][c]]
-                            else:
-                                self.delta[subst[s]][c] = self.delta[s][c]
+                            self.delta[subst[s]][c] = subst.get(self.delta[s][c], self.delta[s][c])
                     del (self.delta[s])
                 except KeyError:
                     pass
@@ -4882,12 +4831,16 @@ class DFA(OFA):
         dfa2 = dfa2.minimal()
         dfa1.completeMinimal()
         dfa2.completeMinimal()
-        if ((dfa1.Sigma != dfa2.Sigma and (len(dfa1.Sigma) != 0 or len(dfa2.Sigma) != 0)) or
-                (len(dfa1.States) != len(dfa2.States)) or (len(dfa1.Final) != len(dfa2.Final)) or
-                (dfa1._uniqueStr() != dfa2._uniqueStr())):
-            return False
-        else:
-            return True
+        return (
+            (
+                dfa1.Sigma == dfa2.Sigma
+                or len(dfa1.Sigma) == 0
+                and len(dfa2.Sigma) == 0
+            )
+            and len(dfa1.States) == len(dfa2.States)
+            and len(dfa1.Final) == len(dfa2.Final)
+            and dfa1._uniqueStr() == dfa2._uniqueStr()
+        )
 
     def _lstTransitions(self):
         l = []
@@ -4937,12 +4890,9 @@ class DFA(OFA):
            TCS 411(38-39): 3404-3413 (2010)
 
         .. note:: if strict=False minimality is assumed"""
-        if strict:
-            m = self.minimal()
-        else:
-            m = self.dup()
+        m = self.minimal() if strict else self.dup()
         comp, center, mark = m.computeKernel()
-        ker = set([m.States[s] for s in mark])
+        ker = {m.States[s] for s in mark}
         m._mergeStatesKernel(ker, m.aEquiv())
         return m
 
@@ -5042,8 +4992,13 @@ class DFA(OFA):
         dupped._compute_delta_inv()
         while I != set([]):
             q = I.pop()
-            succ = tuple([dupped.States[dupped.delta[dupped.stateIndex(q)][a]] for a in dupped.Sigma
-                          if dupped.stateIndex(q) in dupped.delta and a in dupped.delta[dupped.stateIndex(q)]])
+            succ = tuple(
+                dupped.States[dupped.delta[dupped.stateIndex(q)][a]]
+                for a in dupped.Sigma
+                if dupped.stateIndex(q) in dupped.delta
+                and a in dupped.delta[dupped.stateIndex(q)]
+            )
+
             if succ in h:
                 p = h[succ]
                 if len(pi[p]) >= len(pi[q]):
@@ -5251,7 +5206,7 @@ class DFA(OFA):
         :rtype: str"""
         done = set()
         notDone = set()
-        pref = dict()
+        pref = {}
         si = self.Initial
         pref[si] = Epsilon
         notDone.add(si)
@@ -5451,7 +5406,7 @@ class DFA(OFA):
         .. versionadded:: 0.9.5
 
         .. note:: this is to be used with non complete DFAs"""
-        return set([self.evalSymbolI(s, sym) for s in ls if self.evalSymbolI(s, sym) != -1])
+        return {self.evalSymbolI(s, sym) for s in ls if self.evalSymbolI(s, sym) != -1}
 
     def concatI(self, fa2, strict=False):
         """Concatenation of two DFAs.
@@ -5476,9 +5431,8 @@ class DFA(OFA):
         d2.setSigma(NSigma)
         if len(d1.States) == 0 or len(d1.Final) == 0:
             return d1
-        if len(d2.States) <= 1:
-            if not len(d2.Final):
-                return d2
+        if len(d2.States) <= 1 and not len(d2.Final):
+            return d2
         c = DFA()
         c.setSigma(d1.Sigma)
         lStates = []
@@ -5685,7 +5639,6 @@ class DFA(OFA):
                                           copy(self.Sigma))
                 except KeyError:
                     pass
-                return r.reduced()
             else:
                 r = reex.emptyset(copy(self.Sigma))
                 try:
@@ -5697,7 +5650,7 @@ class DFA(OFA):
                                 r = reex.regexp(c, copy(self.Sigma))
                 except KeyError:
                     pass
-                return r.reduced()
+            return r.reduced()
         else:
             r = reex.disj(self._RPath(initial, final, m - 1),
                           reex.concat(self._RPath(initial, m, m - 1),
@@ -5731,8 +5684,8 @@ class DFA(OFA):
             x = x.minimal()
             result = x.witness()
             v = 1
-            if result is None:
-                raise DFAequivalent
+        if result is None:
+            raise DFAequivalent
         return result, v
 
     def usefulStates(self, initial_states=None):
@@ -5751,8 +5704,8 @@ class DFA(OFA):
             initial_states = [self.Initial]
             useful = set(initial_states)
         else:
-            useful = set([s for s in initial_states
-                          if s in self.Final])
+            useful = {s for s in initial_states
+                                  if s in self.Final}
         stack = list(initial_states)
         preceding = {}
         for i in stack:
@@ -5894,7 +5847,7 @@ class DFA(OFA):
         n = len(aut)
         mon = SSemiGroup()
         if monoid:
-            a = tuple((x for x in xrange(n)))
+            a = tuple(xrange(n))
             mon.elements.append(a)
             mon.words.append((None, None))
             mon.gen.append(0)
@@ -5924,10 +5877,7 @@ class DFA(OFA):
             shift = 0
         while True:
             ll = ([], [])
-            if len(sm.gen) == 1:
-                g0 = 0
-            else:
-                g0 = sm.gen[-2] + 1
+            g0 = 0 if len(sm.gen) == 1 else sm.gen[-2] + 1
             g1 = sm.gen[-1] + 1
             for (sym, t1) in enumerate(sm.elements[1:natomic + 1]):
                 for (pr, t2) in enumerate(sm.elements[g0:g1]):

@@ -53,7 +53,7 @@ def concatN(x, y):
     :param x: iterable
     :param y: iterable
     :return: iterable"""
-    return tuple([_concat(a) for a in zip(x, y)])
+    return tuple(_concat(a) for a in zip(x, y))
 
 
 def isLimitExceed(NFA0Delta, NFA1Delta):
@@ -74,10 +74,7 @@ def isLimitExceed(NFA0Delta, NFA1Delta):
     for s in NFA1Delta.keys():
         for s1 in NFA1Delta[s]:
             M += len(NFA1Delta[s][s1])
-    if N * N * M > 1000000:
-        return True
-    else:
-        return False
+    return N**2 * M > 1000000
 
 
 class Transducer(fa.NFA):
@@ -91,7 +88,7 @@ class Transducer(fa.NFA):
     def succintTransitions(self):
         """ Collects the transition information in a concat way suitable for graphical representation.
         :rtype: list of tupples"""
-        foo = dict()
+        foo = {}
         for s in self.delta:
             for c in self.delta[s]:
                 for (oc, s1) in self.delta[s][c]:
@@ -100,8 +97,7 @@ class Transducer(fa.NFA):
                         foo[k] = []
                     foo[k].append((c, oc))
         l = []
-        for k in foo:
-            cs = foo[k]
+        for k, cs in foo.items():
             s = "{0:s}/{1:s}".format(graphvizTranslate(str(cs[0][0])), graphvizTranslate(str(cs[0][1])))
             for c in cs[1:]:
                 s += ", {0:s}/{1:s}".format(graphvizTranslate(str(c[0])), graphvizTranslate(str(c[1])))
@@ -184,7 +180,7 @@ class GFT(Transducer):
             for wi in self.delta[st1]:
                 cst = st1
                 if wi == Epsilon:
-                    for (wo, st2) in self.delta[st1][wi]:
+                    for (wo, st2) in self.delta[cst][wi]:
                         lst = st2
                         if wo == Epsilon:
                             new.addTransition(cst, wi, wo, lst)
@@ -195,7 +191,7 @@ class GFT(Transducer):
                                 cst = mst
                             new.addTransition(cst, Epsilon, wo[-1:], lst)
                 else:
-                    for (wo, st2) in self.delta[st1][wi]:
+                    for (wo, st2) in self.delta[cst][wi]:
                         lst = st2
                         if wo == Epsilon:
                             for i in wi[:-1]:
@@ -584,7 +580,7 @@ class SFT(GFT):
         for s in self.delta.keys():
             aut.delta[s] = {}
             for c in self.delta[s]:
-                aut.delta[s][c] = set([x for (_, x) in self.delta[s][c]])
+                aut.delta[s][c] = {x for (_, x) in self.delta[s][c]}
         return aut
 
     def toOutNFA(self):
@@ -734,8 +730,8 @@ class SFT(GFT):
             done[s] = (Epsilon, Epsilon)
         while notDone:
             sti = notDone.pop()
-            (preInput, preOutput) = done[sti]
             if sti in self.delta:
+                (preInput, preOutput) = done[sti]
                 for symi in self.delta[sti]:
                     for (symo, sto) in self.delta[sti][symi]:
                         if preInput == Epsilon:
@@ -877,10 +873,7 @@ class SFT(GFT):
         """Test whether this transducer has input epsilon-transitions
 
         :rtype: bool"""
-        for s in self.delta:
-            if Epsilon in self.delta[s]:
-                return True
-        return False
+        return any(Epsilon in self.delta[s] for s in self.delta)
 
     def addEpsilonLoops(self):
         """Add a loop transition with epsilon input and output to every state in the transducer."""
@@ -910,7 +903,7 @@ class SFT(GFT):
         :rtype: tuple"""
         done = set()
         notDone = set()
-        pref = dict()
+        pref = {}
         for si in self.Initial:
             pref[si] = (Epsilon, Epsilon)
             notDone.add(si)
@@ -1195,9 +1188,7 @@ class SymbolicSFT(SFT):
         if u == AnySet and v == Epsilon and x != Epsilon and y == Epsilon:
             return True
         # u/v = @epsilon/@s and x= Epsilon and y!=Epsilon
-        if u == Epsilon and v == AnySet and x == Epsilon and y != Epsilon:
-            return True
-        return False
+        return u == Epsilon and v == AnySet and x == Epsilon and y != Epsilon
 
 
     def productInput(self, other):

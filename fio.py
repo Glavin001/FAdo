@@ -613,7 +613,7 @@ def _exportToTeX(FileName, fa):
         foo = {0: fa.Initial, fa.Initial: 0}
         fa.reorder(foo)
     f.write("$$\\begin{array}{r|")
-    for i in xrange(len(fa.Sigma)):
+    for _ in xrange(len(fa.Sigma)):
         f.write("|c")
     f.write("}\n")
     for c in fa.Sigma:

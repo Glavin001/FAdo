@@ -390,7 +390,7 @@ class regexp(object):
             lf = r.linearForm()
             for head in lf:
                 for tail in lf[head]:
-                    if not tail in pd:
+                    if tail not in pd:
                         stack.append(tail)
         return pd
 
@@ -680,10 +680,7 @@ class regexp(object):
             added_states[sym] = state_idx
             stack.append((sym, state_idx))
             aut.addTransition(initial, sym.symbol(), state_idx)
-        if lstar is False:
-            follow_sets = self.followLists()
-        else:
-            follow_sets = self.followListsD()
+        follow_sets = self.followLists() if lstar is False else self.followListsD()
         while stack:
             state, state_idx = stack.pop()
             for sym in follow_sets[state]:
@@ -730,7 +727,7 @@ class regexp(object):
             state, state_idx = stack.pop()
             for sigma in dfa.Sigma:
                 d = state.derivative(sigma).reduced()
-                if not d in dfa.States:
+                if d not in dfa.States:
                     d_idx = dfa.addState(d)
                     stack.append((d, d_idx))
                 else:
@@ -1155,12 +1152,12 @@ class connective(regexp):
         :return: pairs as a dictionary
         :rtype: dictionary"""
         for symbol in self.arg1.last():
-            if not symbol in lists:
+            if symbol not in lists:
                 lists[symbol] = self.arg2.first()
             else:
                 lists[symbol] += self.arg2.first()
         for symbol in self.arg2.last():
-            if not symbol in lists:
+            if symbol not in lists:
                 lists[symbol] = self.arg1.first()
             else:
                 lists[symbol] += self.arg1.first()
@@ -1405,7 +1402,7 @@ class star(regexp):
     def followLists(self, lists=None):
         lists = self.arg.followLists(lists)
         for symbol in self.arg.last():
-            if not symbol in lists:
+            if symbol not in lists:
                 lists[symbol] = self.arg.first()
             else:
                 lists[symbol] += self.arg.first()
@@ -1430,8 +1427,7 @@ class star(regexp):
             return epsilon(self.Sigma)
         if self.arg is rarg:
             return self
-        reduced = star(rarg, self.Sigma)
-        return reduced
+        return star(rarg, self.Sigma)
 
     # noinspection PyUnusedLocal
     def _reducedS(self, hasEpsilon=False):
@@ -1539,19 +1535,16 @@ class star(regexp):
                     for target in nfa.delta[i_state][symbol]:
                         for f_state in final:
                             nfa.addTransition(f_state, symbol, target)
-        for i_state in previous_trans:
+        for i_state, value in previous_trans.items():
             for sym in previous_trans[i_state]:
-                for target in previous_trans[i_state][sym]:
+                for target in value[sym]:
                     nfa.addTransition(i_state, sym, target)
         final.update(initial)
         return new_initial, final
 
     def _nfaFollowEpsilonStep(self, conditions):
         nfa, initial, final = conditions
-        if initial is final:
-            iter_state = final
-        else:
-            iter_state = nfa.addState()
+        iter_state = final if initial is final else nfa.addState()
         self.arg._nfaFollowEpsilonStep((nfa, iter_state, iter_state))
         tomerge = nfa.epsilonPaths(iter_state, iter_state)
         nfa.mergeStatesSet(tomerge)
@@ -1621,10 +1614,9 @@ class concat(connective):
         if self.arg1.ewp():
             if self.arg2.ewp():
                 self.arg1.followListsStar(lists)
-                self.arg2.followListsStar(lists)
             else:
                 self.arg1.followListsD(lists)
-                self.arg2.followListsStar(lists)
+            self.arg2.followListsStar(lists)
         elif self.arg2.ewp():
             self.arg1.followListsStar(lists)
             self.arg2.followListsD(lists)
@@ -1648,8 +1640,7 @@ class concat(connective):
             return left
         if left is self.arg1 and right is self.arg2:
             return self
-        reduced = concat(left, right, self.Sigma)
-        return reduced
+        return concat(left, right, self.Sigma)
 
     _reducedS = reduced
 
@@ -1826,10 +1817,7 @@ class ParseReg1(Yappy):
         return lst[0]
 
     def BaseSemRule(self, lst, context=None):
-        if "sigma" in context:
-            sigma = context["sigma"]
-        else:
-            sigma = None
+        sigma = context["sigma"] if "sigma" in context else None
         if lst[0] == Epsilon:
             return epsilon(sigma)
         if lst[0] == EmptySet:
@@ -1840,24 +1828,15 @@ class ParseReg1(Yappy):
         return lst[1]
 
     def OrSemRule(self, lst, context=None):
-        if "sigma" in context:
-            sigma = context["sigma"]
-        else:
-            sigma = None
+        sigma = context["sigma"] if "sigma" in context else None
         return disj(lst[0], lst[2], sigma)
 
     def ConcatSemRule(self, lst, context=None):
-        if "sigma" in context:
-            sigma = context["sigma"]
-        else:
-            sigma = None
+        sigma = context["sigma"] if "sigma" in context else None
         return concat(lst[0], lst[1], sigma)
 
     def StarSemRule(self, lst, context=None):
-        if "sigma" in context:
-            sigma = context["sigma"]
-        else:
-            sigma = None
+        sigma = context["sigma"] if "sigma" in context else None
         return star(lst[0], sigma)
 
     def DoPrint(self, lst, context=None):

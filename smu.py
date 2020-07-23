@@ -28,8 +28,7 @@ def words2NFA(lst):
     the function creates an NFA accepting exactly these strings
     It returns the the NFA
     '''
-    aut = fl.FL(lst).trieFA().toNFA()
-    return aut
+    return fl.FL(lst).trieFA().toNFA()
 
 
 def intersect(a, b):

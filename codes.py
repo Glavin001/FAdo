@@ -49,21 +49,12 @@ def fixedHierSubset(x, y):
     if x[1] == 'UD_codes' or y[1] == 'Hypercodes':
         return False
     if x[1] == 'Infix_codes':
-        if y[1] == 'Outfix_codes':
-            return False
-        else:
-            return True
+        return y[1] != 'Outfix_codes'
     if x[1] == 'Outfix_codes':
-        if y[1] == 'Infix_codes':
-            return False
-        else:
-            return True
-    if y[1] == 'Infix_codes' or y[1] == 'Outfix_codes':
+        return y[1] != 'Infix_codes'
+    if y[1] in ['Infix_codes', 'Outfix_codes']:
         return False
-    if x[1] == y[1]:
-        return True
-    else:
-        return False
+    return x[1] == y[1]
 
 
 def isSubclass(p1, p2):
@@ -89,7 +80,7 @@ def isSubclass(p1, p2):
                 if fixedHierSubset(x, y):
                     YDel.append(y)
             YL = [y for y in YL if y not in YDel]
-            if len(YL) == 0:
+            if not YL:
                 return True
         return False
 
@@ -120,11 +111,11 @@ def unionOfIDs(X, Y):
     Z = set() | X
     XL = [x for x in X]
     YL = [y for y in Y]
-    while len(XL) > 0 and len(YL) > 0:
+    while XL and YL:
         x = XL.pop()
         YDel = []
-        for j in range(0, len(YL)):
-            y = YL[j]
+        for item in YL:
+            y = item
             if fixedHierSubset(x, y):
                 YDel.append(y)
             elif fixedHierSubset(y, x):
@@ -132,8 +123,6 @@ def unionOfIDs(X, Y):
                 YDel.append(y)
                 Z.remove(x)
                 break
-            else:
-                pass
         YL = [y for y in YL if y not in YDel]
     return Z | set(YL)
 
@@ -234,11 +223,11 @@ class IPTProp(CodeProperty):
         :param IPTProp other: right hand operand
         :rtype: IPTProp """
         sub = isSubclass(self, other)
-        if sub == 1 or sub == 3:
+        if sub in [1, 3]:
             return self
+        if sub == 2:
+            return other
         if isinstance(other, IATProp):
-            if sub == 2:
-                return other
             nt = other.Aut.dup()
             n = nt.addState()
             nt.addInitial(n)
@@ -247,13 +236,11 @@ class IPTProp(CodeProperty):
                 nt.addTransition(n, s, s, n)
             name = unionOfIDs(self.ID, other.ID)
             pty = IPTProp(self.Aut | nt, name)
-            return pty
         else:
-            if sub == 2:
-                return other
             name = unionOfIDs(self.ID, other.ID)
             pty = IPTProp(self.Aut | other.Aut, name)
-            return pty
+
+        return pty
 
     def notSatisfiesW(self, aut):
         """Return a witness of non-satisfaction of the property by the automaton language
@@ -380,11 +367,11 @@ class IATProp(IPTProp):
         :param IPTProp other: right hand operand
         :rtype: IPTProp """
         sub = isSubclass(self, other)
-        if sub == 1 or sub == 3:
+        if sub in [1, 3]:
             return self
+        if sub == 2:
+            return other
         if not isinstance(other, IATProp):
-            if sub == 2:
-                return other
             nt = self.Aut.dup()
             n = nt.addState()
             nt.addInitial(n)
@@ -393,13 +380,11 @@ class IATProp(IPTProp):
                 nt.addTransition(n, s, s, n)
             name = unionOfIDs(self.ID, other.ID)
             pty = IPTProp(other.Aut | nt, name)
-            return pty
         else:
-            if sub == 2:
-                return other
             name = unionOfIDs(self.ID, other.ID)
             pty = IATProp(self.Aut | other.Aut, name)
-            return pty
+
+        return pty
 
     def notSatisfiesW(self, aut):
         """Return a witness of non-satisfaction of the property by the automaton language
@@ -446,7 +431,7 @@ class TrajProp(IATProp):
                         if b == "0":
                             t.addTransition(no, c, c, fNo)
                             t.addTransition(yes, c, c, fYes)
-                        if b == "1":
+                        elif b == "1":
                             t.addTransition(no, Epsilon, c, fYes)
                             t.addTransition(yes, Epsilon, c, fYes)
         return t
@@ -576,10 +561,7 @@ class PrefixProp(TrajProp, FixedProp):
         if isinstance(aut, fa.DFA):
             a = aut.dup()
             a.trim()
-            for s in a.Final:
-                if a.delta.get(s, {}):
-                    return False
-            return True
+            return not any(a.delta.get(s, {}) for s in a.Final)
         else:
             return IATProp.satisfiesP(self, aut)
 
@@ -805,8 +787,7 @@ def createInputAlteringSIDTrans(n, sigmaSet):
     new.addInitial(init)
     for sy in new.Sigma:
         new.addTransition(init, sy, sy, init)
-    i = 1
-    while i <= n:
+    for i in range(1, n + 1):
         d1 = new.stateIndex((i, None), True)
         new.addFinal(d1)
         for s in new.Sigma:
@@ -831,7 +812,6 @@ def createInputAlteringSIDTrans(n, sigmaSet):
                             new.addTransition(foo, s2, s1, d1)
             for s1 in new.Sigma - {s}:
                 new.addTransition(d, s1, s1, d1)
-        i += 1
     return new
 
 
